@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [{ url: "/logo.png" }],
   },
+  other: {
+    "talentapp:project_verification": "6372d6c7bde2313837fd05ee779de95a2d9ee4d9cb6914a3c37f51fc50271c9183137eb4c9809f42976284720091535c3eaf356a9605af5eade018a9257800a8",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
