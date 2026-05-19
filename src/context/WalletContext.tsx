@@ -1,11 +1,12 @@
 "use client";
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { showConnect } from "@stacks/connect";
 
 interface WalletContextType {
   address: string | null;
   connected: boolean;
   connecting: boolean;
-  connect: () => Promise<void>;
+  connect: () => void;
   disconnect: () => void;
 }
 
@@ -13,7 +14,7 @@ const WalletContext = createContext<WalletContextType>({
   address: null,
   connected: false,
   connecting: false,
-  connect: async () => {},
+  connect: () => {},
   disconnect: () => {},
 });
 
@@ -33,18 +34,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(() => {
     setConnecting(true);
     try {
-      // Dynamic import to avoid SSR issues
-      const { showConnect } = await import("@stacks/connect");
-
       showConnect({
         appDetails: {
           name: "PactForge Protocol",
           icon: typeof window !== "undefined" ? `${window.location.origin}/logo.png` : "/logo.png",
         },
-        onFinish: (data: { userSession: { loadUserData: () => { profile: { stxAddress: { mainnet: string } } } } }) => {
+        onFinish: (data) => {
           const userData = data.userSession.loadUserData();
           const stxAddr = userData.profile.stxAddress.mainnet;
           setAddress(stxAddr);
