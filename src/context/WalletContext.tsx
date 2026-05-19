@@ -1,12 +1,12 @@
 "use client";
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { showConnect } from "@stacks/connect";
+import { connect, isConnected, disconnect as stacksDisconnect } from "@stacks/connect";
 
 interface WalletContextType {
   address: string | null;
   connected: boolean;
   connecting: boolean;
-  connect: () => void;
+  connect: () => Promise<void>;
   disconnect: () => void;
 }
 
@@ -14,7 +14,7 @@ const WalletContext = createContext<WalletContextType>({
   address: null,
   connected: false,
   connecting: false,
-  connect: () => {},
+  connect: async () => {},
   disconnect: () => {},
 });
 
@@ -29,37 +29,37 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   // Restore session on mount
   useEffect(() => {
     const saved = localStorage.getItem("pactforge_wallet");
-    if (saved) {
+    if (saved && isConnected()) {
       setAddress(saved);
+    } else {
+      localStorage.removeItem("pactforge_wallet");
+      setAddress(null);
     }
   }, []);
 
-  const connect = useCallback(() => {
+  const connectWallet = useCallback(async () => {
     setConnecting(true);
     try {
-      showConnect({
-        appDetails: {
-          name: "PactForge Protocol",
-          icon: typeof window !== "undefined" ? `${window.location.origin}/logo.png` : "/logo.png",
-        },
-        onFinish: (data) => {
-          const userData = data.userSession.loadUserData();
-          const stxAddr = userData.profile.stxAddress.mainnet;
-          setAddress(stxAddr);
-          localStorage.setItem("pactforge_wallet", stxAddr);
-          setConnecting(false);
-        },
-        onCancel: () => {
-          setConnecting(false);
-        },
-      });
+      const res = await connect();
+      if (res && res.addresses && res.addresses.length > 0) {
+        // Find STX address or default to first address
+        const stxAddr = res.addresses.find(a => a.symbol === "STX")?.address || res.addresses[0].address;
+        setAddress(stxAddr);
+        localStorage.setItem("pactforge_wallet", stxAddr);
+      }
     } catch (err) {
       console.error("Wallet connect error:", err);
+    } finally {
       setConnecting(false);
     }
   }, []);
 
-  const disconnect = useCallback(() => {
+  const disconnectWallet = useCallback(() => {
+    try {
+      stacksDisconnect();
+    } catch (err) {
+      console.error("Disconnect error:", err);
+    }
     setAddress(null);
     localStorage.removeItem("pactforge_wallet");
   }, []);
@@ -69,8 +69,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       address,
       connected: !!address,
       connecting,
-      connect,
-      disconnect,
+      connect: connectWallet,
+      disconnect: disconnectWallet,
     }}>
       {children}
     </WalletContext.Provider>
