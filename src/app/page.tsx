@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import styles from "./page.module.css";
 import { CONTRACTS, DEPLOYER } from "@/lib/stacks";
+import LottieAnimation from "@/components/LottieAnimation";
 
 const FEATURES = [
   { icon: "🔒", title: "Trustless Escrow", desc: "Funds locked in Clarity smart contracts. No intermediary, no risk. Release only when milestones are verified on-chain." },
@@ -43,28 +44,38 @@ export default function HomePage() {
           <div className={styles.heroOrb1} />
           <div className={styles.heroOrb2} />
         </div>
-        <div className="container" style={{ textAlign: "center", paddingTop: 120, paddingBottom: 100, position: "relative", zIndex: 2 }}>
-          <div style={{ marginBottom: 24, display: "flex", justifyContent: "center" }}>
-            <Image src="/logo.png" alt="PactForge Protocol" width={80} height={80} style={{ borderRadius: 20, boxShadow: "0 8px 32px rgba(99,102,241,0.4)" }} />
-          </div>
-          <div className="badge badge-primary animate-in" style={{ marginBottom: 20, fontSize: 13 }}>
-            ⚡ Built on Stacks — Bitcoin L2
-          </div>
-          <h1 className={`${styles.heroTitle} animate-in animate-delay-1`}>
-            Forge Trustless<br />
-            <span className={styles.gradient}>Agreements on Bitcoin</span>
-          </h1>
-          <p className={`${styles.heroSub} animate-in animate-delay-2`}>
-            Decentralized escrow, milestone-based payments, and on-chain dispute resolution.
-            <br />Stop trusting. Start verifying.
-          </p>
-          <div className="animate-in animate-delay-3" style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-            <Link href="/create-pact" className="btn btn-primary" style={{ padding: "14px 32px", fontSize: 15 }}>
-              Create a Pact →
-            </Link>
-            <Link href="/dashboard" className="btn btn-secondary" style={{ padding: "14px 32px", fontSize: 15 }}>
-              View Dashboard
-            </Link>
+        <div className="container">
+          <div className={styles.heroContent}>
+            {/* Left Content */}
+            <div className={styles.heroLeft}>
+              <div className="badge badge-primary animate-in" style={{ marginBottom: 20, fontSize: 13 }}>
+                ⚡ Built on Stacks — Bitcoin L2
+              </div>
+              <h1 className={`${styles.heroTitle} animate-in animate-delay-1`}>
+                Forge Trustless<br />
+                <span className={styles.gradient}>Agreements on Bitcoin</span>
+              </h1>
+              <p className={`${styles.heroSub} animate-in animate-delay-2`}>
+                Decentralized escrow, milestone-based payments, and on-chain dispute resolution.
+                Stop trusting. Start verifying.
+              </p>
+              <div className="animate-in animate-delay-3" style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                <Link href="/create-pact" className="btn btn-primary" style={{ padding: "14px 32px", fontSize: 15 }}>
+                  Create a Pact →
+                </Link>
+                <Link href="/dashboard" className="btn btn-secondary" style={{ padding: "14px 32px", fontSize: 15 }}>
+                  View Dashboard
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Content - 3D cartoon Bitcoin animation */}
+            <div className="animate-in animate-delay-2" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <LottieAnimation 
+                src="https://assets9.lottiefiles.com/packages/lf20_5nseb9g8.json" 
+                style={{ width: "100%", maxWidth: "420px", height: "auto" }}
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -168,8 +179,16 @@ export default function HomePage() {
             padding: "60px 40px", maxWidth: 700, margin: "0 auto",
             background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))",
             border: "1px solid rgba(99,102,241,0.15)",
+            position: "relative",
+            overflow: "hidden"
           }}>
-            <Image src="/logo.png" alt="PactForge" width={56} height={56} style={{ borderRadius: 14, marginBottom: 20, boxShadow: "0 4px 20px rgba(99,102,241,0.3)" }} />
+            {/* Background 3D Shield/Lock Animation */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+              <LottieAnimation 
+                src="https://assets5.lottiefiles.com/packages/lf20_w51pcehl.json"
+                style={{ width: "120px", height: "120px" }}
+              />
+            </div>
             <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 16 }}>
               Ready to <span className={styles.gradient}>Forge</span>?
             </h2>
