@@ -35,15 +35,22 @@ export default function Navbar() {
       transition: "all 0.3s ease",
     }}>
       <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-        <Image
-          src="/logo.png"
-          alt="PactForge"
-          width={36}
-          height={36}
-          style={{ borderRadius: 10, boxShadow: "0 4px 15px rgba(99,102,241,0.3)" }}
-        />
+        <div style={{ position: "relative" }} className="logo-container">
+          <Image
+            src="/logo.png"
+            alt="PactForge"
+            width={36}
+            height={36}
+            style={{ 
+              borderRadius: 10, 
+              boxShadow: "0 4px 15px rgba(249,115,22,0.4)",
+              transition: "transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+            }}
+            className="logo-img"
+          />
+        </div>
         <span style={{ fontSize: 18, fontWeight: 700, color: "#f1f5f9", letterSpacing: "-0.02em" }}>
-          Pact<span style={{ color: "#6366f1" }}>Forge</span>
+          Pact<span style={{ color: "#f97316" }}>Forge</span>
         </span>
       </Link>
 
@@ -145,6 +152,12 @@ export default function Navbar() {
       )}
 
       <style jsx>{`
+        .logo-container {
+          perspective: 1000px;
+        }
+        .logo-container:hover :global(.logo-img) {
+          transform: rotateY(360deg) scale(1.1);
+        }
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
           .mobile-toggle { display: block !important; }
