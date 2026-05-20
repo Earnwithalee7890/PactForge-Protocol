@@ -82,7 +82,7 @@ export default function CreatePactPage() {
       const microAmount = parseFloat(totalAmount) * 1_000_000; // 6 decimals
 
       await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pact-core",
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactcore",
         functionName: "create-pact",
         functionArgs: [
           principalCV(provider),
