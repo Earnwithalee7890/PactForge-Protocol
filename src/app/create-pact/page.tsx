@@ -1,5 +1,8 @@
 "use client";
 import { useState } from "react";
+import { useWallet } from "@/context/WalletContext";
+import { request } from "@stacks/connect";
+import { principalCV, uintCV, stringUtf8CV } from "@stacks/transactions";
 
 interface Milestone {
   title: string;
@@ -8,6 +11,7 @@ interface Milestone {
 }
 
 export default function CreatePactPage() {
+  const { connected, connect } = useWallet();
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -17,6 +21,10 @@ export default function CreatePactPage() {
   const [milestones, setMilestones] = useState<Milestone[]>([
     { title: "", description: "", amount: "" },
   ]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [txId, setTxId] = useState<string | null>(null);
 
   const addMilestone = () => {
     if (milestones.length < 10) {
@@ -36,6 +44,68 @@ export default function CreatePactPage() {
     }
   };
 
+  const handleCreatePact = async () => {
+    if (!connected) {
+      await connect();
+      return;
+    }
+
+    if (!provider || !totalAmount || !title || !description) {
+      setError("Please fill out all required fields.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Fetch current stacks block height from Hiro API
+      const infoRes = await fetch("https://api.mainnet.hiro.so/v2/info");
+      if (!infoRes.ok) throw new Error("Failed to fetch Stacks network height");
+      const infoData = await infoRes.json();
+      const currentBlockHeight = infoData.stacks_tip_height || 165000;
+
+      // 2. Calculate deadline in blocks (default 30 days = 4320 blocks)
+      let blocksOffset = 4320;
+      if (deadline) {
+        const selectedDate = new Date(deadline);
+        const now = new Date();
+        const diffTime = selectedDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+          blocksOffset = diffDays * 144;
+        }
+      }
+      const deadlineBlockHeight = currentBlockHeight + blocksOffset;
+
+      // 3. Trigger contract call
+      const microAmount = parseFloat(totalAmount) * 1_000_000; // 6 decimals
+
+      await request("stx_callContract", {
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pact-core",
+        functionName: "create-pact",
+        functionArgs: [
+          principalCV(provider),
+          uintCV(microAmount),
+          stringUtf8CV(title),
+          stringUtf8CV(description),
+          uintCV(deadlineBlockHeight),
+          uintCV(milestones.length)
+        ],
+        postConditionMode: "allow",
+        network: "mainnet",
+      });
+
+      // Show success step (Stacks request triggers broadcast)
+      setStep(4);
+    } catch (err: any) {
+      console.error("Error creating pact:", err);
+      setError(err.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ minHeight: "100vh", paddingTop: 96, paddingBottom: 60 }}>
       <div className="container" style={{ maxWidth: 720 }}>
@@ -45,22 +115,30 @@ export default function CreatePactPage() {
         </div>
 
         {/* Progress */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 40 }}>
-          {["Details", "Milestones", "Review"].map((label, i) => (
-            <div key={i} style={{ flex: 1, textAlign: "center" }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: "50%", margin: "0 auto 8px",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 14, fontWeight: 700,
-                background: step > i ? "linear-gradient(135deg, #6366f1, #8b5cf6)" : "rgba(255,255,255,0.05)",
-                color: step > i ? "white" : "#64748b",
-                border: step === i + 1 ? "2px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
-                transition: "all 0.3s ease",
-              }}>{i + 1}</div>
-              <div style={{ fontSize: 12, color: step > i ? "#f1f5f9" : "#64748b", fontWeight: 500 }}>{label}</div>
-            </div>
-          ))}
-        </div>
+        {step <= 3 && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 40 }}>
+            {["Details", "Milestones", "Review"].map((label, i) => (
+              <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: "50%", margin: "0 auto 8px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, fontWeight: 700,
+                  background: step > i ? "linear-gradient(135deg, #6366f1, #8b5cf6)" : "rgba(255,255,255,0.05)",
+                  color: step > i ? "white" : "#64748b",
+                  border: step === i + 1 ? "2px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
+                  transition: "all 0.3s ease",
+                }}>{i + 1}</div>
+                <div style={{ fontSize: 12, color: step > i ? "#f1f5f9" : "#64748b", fontWeight: 500 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className="glass-card" style={{ padding: 16, marginBottom: 24, border: "1px solid #ef4444", background: "rgba(239,68,68,0.05)", color: "#f87171", fontSize: 14 }}>
+            ⚠️ {error}
+          </div>
+        )}
 
         {/* Step 1: Details */}
         {step === 1 && (
@@ -156,7 +234,26 @@ export default function CreatePactPage() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
               <button className="btn btn-secondary" onClick={() => setStep(2)}>← Back</button>
-              <button className="btn btn-primary" style={{ padding: "14px 36px" }}>⚡ Create Pact</button>
+              <button className="btn btn-primary" style={{ padding: "14px 36px" }} onClick={handleCreatePact} disabled={loading}>
+                {loading ? "Creating transaction..." : "⚡ Create Pact"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Success Screen */}
+        {step === 4 && (
+          <div className="glass-card" style={{ padding: 40, textAlign: "center", border: "1px solid rgba(34,197,94,0.3)", background: "linear-gradient(135deg, rgba(34,197,94,0.06), rgba(99,102,241,0.02))" }}>
+            <div style={{ fontSize: 48, marginBottom: 20 }}>🚀</div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: "#22c55e" }}>Escrow Transaction Initiated!</h2>
+            <p style={{ color: "#94a3b8", fontSize: 15, marginBottom: 28, maxWidth: 500, margin: "0 auto 28px", lineHeight: 1.6 }}>
+              Your trustless agreement has been submitted to the Stacks Blockchain. Connect and verify the milestones once the block completes!
+            </p>
+            <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
+              <button className="btn btn-primary" onClick={() => setStep(1)}>Create Another Pact</button>
+              <a href="https://explorer.hiro.so/?chain=mainnet" target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
+                View Stacks Explorer
+              </a>
             </div>
           </div>
         )}

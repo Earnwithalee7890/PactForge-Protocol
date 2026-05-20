@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { Providers } from "./providers";
+import MascotHelper from "@/components/MascotHelper";
 
 export const metadata: Metadata = {
   title: "PactForge Protocol | Trustless Escrow on Bitcoin L2",
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Navbar />
           <main>{children}</main>
+          <MascotHelper />
         </Providers>
       </body>
     </html>
