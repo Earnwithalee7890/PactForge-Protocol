@@ -1,13 +1,44 @@
 "use client";
 import { useState } from "react";
 import { useWallet } from "@/context/WalletContext";
+import LottieAnimation from "@/components/LottieAnimation";
 
 const TIERS = [
-  { name: "Unranked", min: 0, color: "#64748b", icon: "○" },
-  { name: "Bronze", min: 1, color: "#cd7f32", icon: "🥉" },
-  { name: "Silver", min: 20, color: "#c0c0c0", icon: "🥈" },
-  { name: "Gold", min: 50, color: "#ffd700", icon: "🥇" },
-  { name: "Diamond", min: 100, color: "#b9f2ff", icon: "💎" },
+  { 
+    name: "Unranked", 
+    min: 0, 
+    color: "#64748b", 
+    icon: "○", 
+    animation: "https://assets10.lottiefiles.com/packages/lf20_myejio2g.json" // 3D cartoon avatar waving robot
+  },
+  { 
+    name: "Bronze", 
+    min: 1, 
+    color: "#cd7f32", 
+    icon: "🥉", 
+    animation: "https://assets3.lottiefiles.com/packages/lf20_wd1upgpx.json" // 3D cartoon medal
+  },
+  { 
+    name: "Silver", 
+    min: 20, 
+    color: "#c0c0c0", 
+    icon: "🥈", 
+    animation: "https://assets9.lottiefiles.com/packages/lf20_7n0a1h3q.json" // 3D cartoon rotating coin
+  },
+  { 
+    name: "Gold", 
+    min: 50, 
+    color: "#ffd700", 
+    icon: "🥇", 
+    animation: "https://assets10.lottiefiles.com/packages/lf20_touoh4ky.json" // 3D cartoon gold trophy
+  },
+  { 
+    name: "Diamond", 
+    min: 100, 
+    color: "#b9f2ff", 
+    icon: "💎", 
+    animation: "https://assets8.lottiefiles.com/packages/lf20_9n25qc.json" // 3D cartoon rotating diamond
+  },
 ];
 
 const LEADERBOARD = [
@@ -92,7 +123,12 @@ export default function ReputationPage() {
         ) : !reputation ? (
           <div className="glass-card" style={{ padding: 40, textAlign: "center", marginBottom: 32,
             background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(139,92,246,0.02))", border: "1px solid rgba(245,158,11,0.2)" }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>🌱</div>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>
+              <LottieAnimation 
+                src="https://assets10.lottiefiles.com/packages/lf20_myejio2g.json" 
+                style={{ width: "120px", height: "120px", margin: "0 auto" }}
+              />
+            </div>
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Profile Not Initialized</h3>
             <p style={{ color: "#94a3b8", marginBottom: 24, maxWidth: 500, margin: "0 auto 24px" }}>
               You don't have an active reputation profile on-chain. Initialize your soul-bound profile to start building trust.
@@ -103,15 +139,19 @@ export default function ReputationPage() {
           </div>
         ) : (
           <>
-            {/* Live Profile Card */}
+            {/* Live Profile Card with 3D Cartoon Avatar */}
             <div className="glass-card" style={{ padding: 36, marginBottom: 32, display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap",
               background: `linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04))`, border: "1px solid rgba(99,102,241,0.12)" }}>
               <div style={{
-                width: 80, height: 80, borderRadius: 20, fontSize: 36,
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                width: 96, height: 96, borderRadius: 24,
+                background: "linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
+                border: "1px solid rgba(255,255,255,0.08)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 8px 30px rgba(99,102,241,0.25)",
-              }}>{currentTier.icon}</div>
+                boxShadow: "0 8px 30px rgba(99,102,241,0.15)",
+                overflow: "hidden"
+              }}>
+                <LottieAnimation src={currentTier.animation} style={{ width: "80px", height: "80px" }} />
+              </div>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#94a3b8", marginBottom: 4 }}>
                   Connected: {address}
