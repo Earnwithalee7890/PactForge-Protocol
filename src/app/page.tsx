@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import styles from "./page.module.css";
 import { CONTRACTS, DEPLOYER } from "@/lib/stacks";
-import LottieAnimation from "@/components/LottieAnimation";
+import ThreeDLogo from "@/components/ThreeDLogo";
 
 const FEATURES = [
   { icon: "🔒", title: "Trustless Escrow", desc: "Funds locked in Clarity smart contracts. No intermediary, no risk. Release only when milestones are verified on-chain." },
@@ -71,10 +71,7 @@ export default function HomePage() {
 
             {/* Right Content - 3D cartoon Bitcoin animation */}
             <div className="animate-in animate-delay-2" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-              <LottieAnimation 
-                src="https://assets9.lottiefiles.com/packages/lf20_5nseb9g8.json" 
-                style={{ width: "100%", maxWidth: "420px", height: "auto" }}
-              />
+              <ThreeDLogo size={360} />
             </div>
           </div>
         </div>
@@ -184,10 +181,7 @@ export default function HomePage() {
           }}>
             {/* Background 3D Shield/Lock Animation */}
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-              <LottieAnimation 
-                src="https://assets5.lottiefiles.com/packages/lf20_w51pcehl.json"
-                style={{ width: "120px", height: "120px" }}
-              />
+              <ThreeDLogo size={120} />
             </div>
             <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 16 }}>
               Ready to <span className={styles.gradient}>Forge</span>?
@@ -209,7 +203,7 @@ export default function HomePage() {
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 }}>
           <Image src="/logo.png" alt="PactForge" width={24} height={24} style={{ borderRadius: 6 }} />
-          <span style={{ fontWeight: 700, color: "#f1f5f9" }}>Pact<span style={{ color: "#6366f1" }}>Forge</span></span>
+          <span style={{ fontWeight: 700, color: "#f1f5f9" }}>Pact<span style={{ color: "#f97316" }}>Forge</span></span>
           <span>•</span>
           <span>Built on Stacks</span>
           <span>•</span>

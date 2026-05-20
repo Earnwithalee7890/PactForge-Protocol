@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import LottieAnimation from "./LottieAnimation";
+import MascotAvatar from "./MascotAvatar";
 
 const SLIDES = [
   {
@@ -9,22 +9,22 @@ const SLIDES = [
     badge: "Mascot Helper"
   },
   {
-    title: "🔒 Smart Contract Escrow",
+    title: "🔒 Smart Escrow Contracts",
     text: "Clients deposit funds securely into Clarity smart contracts. Funds are locked safe and sound — no intermediaries, no rugs.",
     badge: "Escrow Logic"
   },
   {
-    title: "📊 Milestone-Based Payments",
+    title: "📊 Milestone Payments",
     text: "Projects are divided into milestones. Payment is automatically released only when you verify and approve deliverables.",
     badge: "Milestones"
   },
   {
-    title: "⚖️ Decentralized Disputes",
+    title: "⚖️ Staked Arbitration",
     text: "If any conflict arises, staked arbiters review deliverables and vote on-chain to refund or release funds fairly.",
     badge: "Arbitration"
   },
   {
-    title: "₿ Bitcoin Native Security",
+    title: "₿ Bitcoin L2 Security",
     text: "All agreements are finalized on Stacks, inheriting the full security and decentralization of the core Bitcoin blockchain!",
     badge: "Bitcoin L2"
   }
@@ -64,11 +64,11 @@ export default function MascotHelper() {
           width: 320,
           background: "rgba(15, 23, 42, 0.95)",
           backdropFilter: "blur(12px)",
-          border: "1px solid rgba(99, 102, 241, 0.25)",
+          border: "1px solid rgba(249, 115, 22, 0.35)",
           borderRadius: 20,
           padding: 20,
           marginBottom: 16,
-          boxShadow: "0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.15)",
+          boxShadow: "0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(249, 115, 22, 0.15)",
           animation: "scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
           position: "relative",
         }}>
@@ -84,7 +84,12 @@ export default function MascotHelper() {
             ✕
           </button>
 
-          <div style={{ display: "inline-block", background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 6, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#a5b4fc", marginBottom: 12 }}>
+          {/* Interactive Talking 3D Mascot Character */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+            <MascotAvatar size={90} />
+          </div>
+
+          <div style={{ display: "inline-block", background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.25)", borderRadius: 6, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#ffedd5", marginBottom: 12 }}>
             {SLIDES[currentSlide].badge}
           </div>
 
@@ -114,9 +119,9 @@ export default function MascotHelper() {
               <button 
                 onClick={handleNext} 
                 style={{
-                  background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none",
+                  background: "linear-gradient(135deg, #f97316, #ea580c)", border: "none",
                   borderRadius: 8, padding: "6px 16px", fontSize: 11, color: "white", fontWeight: 600, cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(99,102,241,0.2)"
+                  boxShadow: "0 4px 12px rgba(249,115,22,0.2)"
                 }}
               >
                 {currentSlide === SLIDES.length - 1 ? "Start Over" : "Next →"}
@@ -129,14 +134,14 @@ export default function MascotHelper() {
       {/* Floating Notification Tooltip */}
       {showNotification && !isOpen && (
         <div style={{
-          background: "rgba(99, 102, 241, 0.95)",
+          background: "rgba(249, 115, 22, 0.95)",
           color: "white",
           borderRadius: 12,
           padding: "10px 16px",
           fontSize: 12,
           fontWeight: 600,
           marginBottom: 12,
-          boxShadow: "0 8px 24px rgba(99, 102, 241, 0.3)",
+          boxShadow: "0 8px 24px rgba(249, 115, 22, 0.3)",
           animation: "bounceFloat 2s ease-in-out infinite",
           pointerEvents: "none",
           position: "relative",
@@ -145,7 +150,7 @@ export default function MascotHelper() {
           💡 Psst! Click me to learn how PactForge works!
           <div style={{
             position: "absolute", bottom: -6, right: 36,
-            width: 12, height: 12, background: "rgba(99, 102, 241, 0.95)",
+            width: 12, height: 12, background: "rgba(249, 115, 22, 0.95)",
             transform: "rotate(45deg)"
           }} />
         </div>
@@ -158,8 +163,8 @@ export default function MascotHelper() {
           width: 72, height: 72,
           borderRadius: "50%",
           background: isOpen ? "rgba(15, 23, 42, 0.9)" : "linear-gradient(135deg, #1e293b, #0f172a)",
-          border: isOpen ? "2px solid #6366f1" : "2px solid rgba(255, 255, 255, 0.08)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(99, 102, 241, 0.2)",
+          border: isOpen ? "2px solid #f97316" : "2px solid rgba(255, 255, 255, 0.08)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(249, 115, 22, 0.2)",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
@@ -168,10 +173,7 @@ export default function MascotHelper() {
           transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
         }}
       >
-        <LottieAnimation 
-          src="https://assets10.lottiefiles.com/packages/lf20_myejio2g.json" 
-          style={{ width: "64px", height: "64px" }}
-        />
+        <MascotAvatar size={64} />
       </button>
 
       <style jsx global>{`
