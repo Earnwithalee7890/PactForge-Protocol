@@ -44,7 +44,17 @@ export default function HomePage() {
           <div className={styles.heroOrb1} />
           <div className={styles.heroOrb2} />
         </div>
-        <div className="container">
+        
+        {/* Event Banner */}
+        <div style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.1), rgba(236,72,153,0.1))", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "12px 0", textAlign: "center" }}>
+          <div className="container">
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#f1f5f9" }}>
+              🚀 Built for the <span className="animated-gradient-text" style={{ fontSize: 14 }}>May Talent Stacks Builder Event</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="container" style={{ marginTop: 40 }}>
           <div className={styles.heroContent}>
             {/* Left Content */}
             <div className={styles.heroLeft}>
@@ -53,14 +63,14 @@ export default function HomePage() {
               </div>
               <h1 className={`${styles.heroTitle} animate-in animate-delay-1`}>
                 Forge Trustless<br />
-                <span className={styles.gradient}>Agreements on Bitcoin</span>
+                <span className="animated-gradient-text">Agreements on Bitcoin</span>
               </h1>
               <p className={`${styles.heroSub} animate-in animate-delay-2`}>
                 Decentralized escrow, milestone-based payments, and on-chain dispute resolution.
                 Stop trusting. Start verifying.
               </p>
               <div className="animate-in animate-delay-3" style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                <Link href="/create-pact" className="btn btn-primary" style={{ padding: "14px 32px", fontSize: 15 }}>
+                <Link href="/create-pact" className="btn btn-primary shimmer-btn" style={{ padding: "14px 32px", fontSize: 15 }}>
                   Create a Pact →
                 </Link>
                 <Link href="/dashboard" className="btn btn-secondary" style={{ padding: "14px 32px", fontSize: 15 }}>
@@ -184,12 +194,12 @@ export default function HomePage() {
               <ThreeDLogo size={120} />
             </div>
             <h2 style={{ fontSize: 32, fontWeight: 800, marginBottom: 16 }}>
-              Ready to <span className={styles.gradient}>Forge</span>?
+              Ready to <span className="animated-gradient-text">Forge</span>?
             </h2>
             <p style={{ color: "#94a3b8", fontSize: 16, marginBottom: 32, maxWidth: 500, margin: "0 auto 32px" }}>
               Create your first trustless agreement in minutes. Connect your Stacks wallet to get started.
             </p>
-            <Link href="/create-pact" className="btn btn-primary" style={{ padding: "16px 40px", fontSize: 16 }}>
+            <Link href="/create-pact" className="btn btn-primary shimmer-btn" style={{ padding: "16px 40px", fontSize: 16 }}>
               Launch App →
             </Link>
           </div>
