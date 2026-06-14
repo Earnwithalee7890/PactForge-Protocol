@@ -17,14 +17,52 @@ const stateColors: Record<string, { bg: string; color: string }> = {
 
 export default function DashboardPage() {
   const [tab, setTab] = useState<"all" | "active" | "completed">("all");
-  const filtered = tab === "all" ? MOCK_PACTS : MOCK_PACTS.filter(p => p.state === tab);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"deadline" | "amount" | "default">("default");
+
+  const filtered = MOCK_PACTS.filter(p => {
+    if (tab !== "all" && p.state !== tab) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!p.title.toLowerCase().includes(q) && !p.provider.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    if (sortBy === "amount") {
+      const amountA = parseInt(a.amount.replace(/,/g, ''));
+      const amountB = parseInt(b.amount.replace(/,/g, ''));
+      return amountB - amountA;
+    }
+    if (sortBy === "deadline") {
+      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+    }
+    return 0;
+  });
+
+  const exportCSV = () => {
+    const headers = ["ID", "Title", "Provider", "Amount", "Milestones", "Completed", "State", "Deadline"];
+    const csvContent = [
+      headers.join(","),
+      ...filtered.map(p => `${p.id},"${p.title}","${p.provider}","${p.amount}",${p.milestones},${p.completed},${p.state},"${p.deadline}"`)
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "pacts_export.csv";
+    link.click();
+  };
 
   return (
     <div style={{ minHeight: "100vh", paddingTop: 96, paddingBottom: 60 }}>
       <div className="container">
-        <div style={{ marginBottom: 40 }}>
-          <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.02em" }}>Dashboard</h1>
-          <p style={{ color: "#94a3b8", marginTop: 6 }}>Manage your pacts, track milestones, and monitor earnings.</p>
+        <div style={{ marginBottom: 40, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
+          <div>
+            <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.02em" }}>Dashboard</h1>
+            <p style={{ color: "#94a3b8", marginTop: 6 }}>Manage your pacts, track milestones, and monitor earnings.</p>
+          </div>
+          <button onClick={exportCSV} className="btn btn-secondary" style={{ padding: "8px 20px", fontSize: 13 }}>
+            Export CSV
+          </button>
         </div>
 
         {/* Stats Row */}
@@ -49,15 +87,54 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
-          {(["all", "active", "completed"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={tab === t ? "btn btn-primary" : "btn btn-secondary"}
-              style={{ padding: "8px 20px", fontSize: 13, textTransform: "capitalize" }}>
-              {t === "all" ? "All Pacts" : t}
-            </button>
-          ))}
+        {/* Toolbar: Tabs, Search, Sort */}
+        <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            {(["all", "active", "completed"] as const).map(t => (
+              <button key={t} onClick={() => setTab(t)}
+                className={tab === t ? "btn btn-primary" : "btn btn-secondary"}
+                style={{ padding: "8px 20px", fontSize: 13, textTransform: "capitalize" }}>
+                {t === "all" ? "All Pacts" : t}
+              </button>
+            ))}
+          </div>
+          
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <input 
+              type="text" 
+              placeholder="Search pacts..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "8px 16px",
+                color: "#f1f5f9",
+                fontSize: 13,
+                outline: "none",
+                minWidth: 200
+              }}
+            />
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value as any)}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "8px 16px",
+                color: "#f1f5f9",
+                fontSize: 13,
+                outline: "none",
+                cursor: "pointer"
+              }}
+            >
+              <option value="default" style={{ background: "#0f172a" }}>Sort by: Default</option>
+              <option value="amount" style={{ background: "#0f172a" }}>Sort by: Amount</option>
+              <option value="deadline" style={{ background: "#0f172a" }}>Sort by: Deadline</option>
+            </select>
+          </div>
         </div>
 
         {/* Pacts List */}

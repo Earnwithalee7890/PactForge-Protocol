@@ -15,6 +15,7 @@
     "@stacks/transactions": "^7.4.0",
     "lottie-react": "^2.4.1",
     "next": "16.2.6",
+    "pactforge-sdk": "file:../../pactforge sdk",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
