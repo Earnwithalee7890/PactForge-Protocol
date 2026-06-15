@@ -59,6 +59,30 @@ export default function DashboardPage() {
     link.click();
   };
 
+  const handleFundPact = (e: React.MouseEvent, pactId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const pact = pactStore.getPactById(pactId);
+    if (pact) {
+      pact.state = 'active';
+      pact.fundedAmount = pact.totalAmount;
+      // Mark first milestone In Progress
+      if (pact.milestones.length > 0) pact.milestones[0].state = 1;
+      pactStore.updatePact(pact);
+      setPacts(pactStore.getPacts());
+    }
+  };
+
+  const handleCompleteNext = (e: React.MouseEvent, pact: Pact) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const nextMilestone = pact.milestones.find(m => m.state < 3);
+    if (nextMilestone) {
+      pactStore.updateMilestoneState(pact.id, nextMilestone.id, 5);
+      setPacts(pactStore.getPacts());
+    }
+  };
+
   return (
     <div style={{ minHeight: "100vh", paddingTop: 96, paddingBottom: 60 }}>
       <div className="container">
@@ -150,6 +174,7 @@ export default function DashboardPage() {
             const total = p.milestones.length;
             const completed = p.milestones.filter(m => m.state >= 3).length;
             const pct = total > 0 ? (completed / total) * 100 : 0;
+            const hasNext = p.milestones.some(m => m.state < 3);
             return (
               <Link key={p.id} href={`/pacts?id=${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <div className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", cursor: "pointer", transition: "transform 0.2s" }}
@@ -173,11 +198,23 @@ export default function DashboardPage() {
                   <div style={{ textAlign: "center", minWidth: 80 }}>
                     <div style={{ fontSize: 12, color: "#64748b" }}>{p.deadline}</div>
                   </div>
-                  <div style={{
-                    padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
-                    background: stateColors[p.state]?.bg, color: stateColors[p.state]?.color,
-                    textTransform: "capitalize",
-                  }}>{p.state}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    {p.state === 'created' && (
+                      <button onClick={e => handleFundPact(e, p.id)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: 11 }}>
+                        ⚡ Fund Pact
+                      </button>
+                    )}
+                    {p.state === 'active' && hasNext && (
+                      <button onClick={e => handleCompleteNext(e, p)} className="btn btn-success" style={{ padding: "6px 12px", fontSize: 11 }}>
+                        ✅ Complete MS
+                      </button>
+                    )}
+                    <div style={{
+                      padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
+                      background: stateColors[p.state]?.bg, color: stateColors[p.state]?.color,
+                      textTransform: "capitalize",
+                    }}>{p.state}</div>
+                  </div>
                 </div>
               </Link>
             );
