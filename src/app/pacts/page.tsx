@@ -37,6 +37,10 @@ function PactDetailContent() {
     );
   }
 
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputeTitle, setDisputeTitle] = useState("");
+  const [disputeReason, setDisputeReason] = useState("");
+
   const handleMilestoneAction = (milestoneId: number, newState: any) => {
     const updated = pactStore.updateMilestoneState(pact.id, milestoneId, newState);
     if (updated) {
@@ -58,6 +62,18 @@ function PactDetailContent() {
     p.state = "cancelled";
     pactStore.updatePact(p);
     setPact(p);
+  };
+
+  const handleRaiseDispute = () => {
+    if (!disputeTitle.trim() || !disputeReason.trim()) return;
+    const disp = pactStore.raiseDispute(pact.id, disputeTitle, disputeReason);
+    if (disp) {
+      const p = pactStore.getPactById(pact.id);
+      if (p) setPact(p);
+      setShowDisputeModal(false);
+      setDisputeTitle("");
+      setDisputeReason("");
+    }
   };
 
   const completedMs = pact.milestones.filter(m => m.state >= 3).length;
@@ -178,7 +194,7 @@ function PactDetailContent() {
           )}
           {pact.state === "active" && (
             <>
-              <button className="btn btn-danger">🚨 Raise Dispute</button>
+              <button onClick={() => setShowDisputeModal(true)} className="btn btn-danger">🚨 Raise Dispute</button>
               <button onClick={handleCancelPact} className="btn btn-secondary" style={{ padding: "12px 28px" }}>
                 ❌ Cancel Pact
               </button>
@@ -201,6 +217,35 @@ function PactDetailContent() {
           )}
         </div>
       </div>
+
+      {/* Dispute Modal Dialog */}
+      {showDisputeModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)",
+          display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1100,
+        }}>
+          <div className="glass-card" style={{ padding: 36, width: "100%", maxWidth: 500, display: "flex", flexDirection: "column", gap: 20 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800 }}>🚨 Escalate to Arbitration</h2>
+            <p style={{ color: "#94a3b8", fontSize: 13 }}>Briefly explain the issue. Staked DAO arbiters will vote on-chain based on the submitted evidence.</p>
+            
+            <div className="input-group">
+              <label className="input-label">Dispute Title</label>
+              <input className="input-field" placeholder="e.g. Incomplete features in Milestone 2" value={disputeTitle} onChange={e => setDisputeTitle(e.target.value)} />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Reason / Explanation</label>
+              <textarea className="input-field" placeholder="Provide link to code, deliverables, or detail the latency issue..." value={disputeReason} onChange={e => setDisputeReason(e.target.value)} style={{ minHeight: 120 }} />
+            </div>
+
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
+              <button onClick={() => setShowDisputeModal(false)} className="btn btn-secondary" style={{ padding: "10px 20px" }}>Cancel</button>
+              <button onClick={handleRaiseDispute} className="btn btn-danger" style={{ padding: "10px 20px" }}>Escalate to DAO</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
