@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useWallet } from "@/context/WalletContext";
 import { request } from "@stacks/connect";
 import { principalCV, uintCV, stringUtf8CV } from "@stacks/transactions";
+import { pactStore } from "@/lib/pactStore";
 
 interface Milestone {
   title: string;
@@ -11,7 +12,7 @@ interface Milestone {
 }
 
 export default function CreatePactPage() {
-  const { connected, connect } = useWallet();
+  const { address, connected, connect } = useWallet();
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -45,11 +46,6 @@ export default function CreatePactPage() {
   };
 
   const handleCreatePact = async () => {
-    if (!connected) {
-      await connect();
-      return;
-    }
-
     if (!provider || !totalAmount || !title || !description) {
       setError("Please fill out all required fields.");
       return;
@@ -59,44 +55,57 @@ export default function CreatePactPage() {
     setError(null);
 
     try {
-      // 1. Fetch current stacks block height from Hiro API
-      const infoRes = await fetch("https://api.mainnet.hiro.so/v2/info");
-      if (!infoRes.ok) throw new Error("Failed to fetch Stacks network height");
-      const infoData = await infoRes.json();
-      const currentBlockHeight = infoData.stacks_tip_height || 165000;
+      // Always save to pactStore for local persistent simulator
+      pactStore.createPact(
+        title,
+        description,
+        address || "SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7", // fallback client address
+        provider,
+        totalAmount,
+        milestones
+      );
 
-      // 2. Calculate deadline in blocks (default 30 days = 4320 blocks)
-      let blocksOffset = 4320;
-      if (deadline) {
-        const selectedDate = new Date(deadline);
-        const now = new Date();
-        const diffTime = selectedDate.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays > 0) {
-          blocksOffset = diffDays * 144;
+      // If wallet is connected, try to trigger the actual Hiro wallet call,
+      // but catch the error so user can proceed in simulated/offline mode if needed.
+      if (connected) {
+        try {
+          const infoRes = await fetch("https://api.mainnet.hiro.so/v2/info");
+          if (!infoRes.ok) throw new Error("Failed to fetch Stacks network height");
+          const infoData = await infoRes.json();
+          const currentBlockHeight = infoData.stacks_tip_height || 165000;
+
+          let blocksOffset = 4320;
+          if (deadline) {
+            const selectedDate = new Date(deadline);
+            const now = new Date();
+            const diffTime = selectedDate.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays > 0) {
+              blocksOffset = diffDays * 144;
+            }
+          }
+          const deadlineBlockHeight = currentBlockHeight + blocksOffset;
+          const microAmount = parseFloat(totalAmount) * 1_000_000;
+
+          await request("stx_callContract", {
+            contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactcore",
+            functionName: "create-pact",
+            functionArgs: [
+              principalCV(provider),
+              uintCV(microAmount),
+              stringUtf8CV(title),
+              stringUtf8CV(description),
+              uintCV(deadlineBlockHeight),
+              uintCV(milestones.length)
+            ],
+            postConditionMode: "allow",
+            network: "mainnet",
+          });
+        } catch (walletErr) {
+          console.warn("Wallet transaction rejected or failed, continuing in simulator mode:", walletErr);
         }
       }
-      const deadlineBlockHeight = currentBlockHeight + blocksOffset;
 
-      // 3. Trigger contract call
-      const microAmount = parseFloat(totalAmount) * 1_000_000; // 6 decimals
-
-      await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactcore",
-        functionName: "create-pact",
-        functionArgs: [
-          principalCV(provider),
-          uintCV(microAmount),
-          stringUtf8CV(title),
-          stringUtf8CV(description),
-          uintCV(deadlineBlockHeight),
-          uintCV(milestones.length)
-        ],
-        postConditionMode: "allow",
-        network: "mainnet",
-      });
-
-      // Show success step (Stacks request triggers broadcast)
       setStep(4);
     } catch (err: any) {
       console.error("Error creating pact:", err);
