@@ -37,6 +37,29 @@ function PactDetailContent() {
     );
   }
 
+  const handleMilestoneAction = (milestoneId: number, newState: any) => {
+    const updated = pactStore.updateMilestoneState(pact.id, milestoneId, newState);
+    if (updated) {
+      setPact({ ...updated });
+    }
+  };
+
+  const handleFundPact = () => {
+    const p = { ...pact };
+    p.state = "active";
+    p.fundedAmount = p.totalAmount;
+    if (p.milestones.length > 0) p.milestones[0].state = 1; // Mark first milestone In Progress
+    pactStore.updatePact(p);
+    setPact(p);
+  };
+
+  const handleCancelPact = () => {
+    const p = { ...pact };
+    p.state = "cancelled";
+    pactStore.updatePact(p);
+    setPact(p);
+  };
+
   const completedMs = pact.milestones.filter(m => m.state >= 3).length;
   const progress = pact.milestones.length > 0 ? (completedMs / pact.milestones.length) * 100 : 0;
 
@@ -55,13 +78,13 @@ function PactDetailContent() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 20 }}>
             {[
               { label: "Total Value", value: pact.totalAmount },
+              { label: "Funded", value: pact.fundedAmount },
               { label: "Released", value: pact.releasedAmount },
               { label: "State", value: pact.state },
-              { label: "Deadline", value: pact.deadline },
             ].map((item, i) => (
               <div key={i}>
                 <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4, textTransform: "capitalize" }}>{item.label}</div>
-                <div style={{ fontSize: 16, fontWeight: 700, textTransform: i === 2 ? "capitalize" : "none" }}>{item.value}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, textTransform: i === 3 ? "capitalize" : "none" }}>{item.value}</div>
               </div>
             ))}
           </div>
@@ -98,7 +121,7 @@ function PactDetailContent() {
 
         {/* Milestones Timeline */}
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Milestones</h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
           {pact.milestones.map((ms, i) => {
             const st = msColors[ms.state] || { bg: "rgba(255,255,255,0.05)", color: "#fff", label: "Unknown" };
             return (
@@ -114,17 +137,68 @@ function PactDetailContent() {
                   <div style={{ fontSize: 13, color: "#64748b" }}>{ms.description}</div>
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 14, minWidth: 80, textAlign: "right" }}>{ms.amount}</div>
-                <div style={{ padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600, background: st.bg, color: st.color }}>{st.label}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {pact.state === "active" && (
+                    <>
+                      {ms.state === 0 && (
+                        <button onClick={() => handleMilestoneAction(ms.id, 1)} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: 11 }}>
+                          🚀 Start
+                        </button>
+                      )}
+                      {(ms.state === 1 || ms.state === 4) && (
+                        <button onClick={() => handleMilestoneAction(ms.id, 2)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: 11 }}>
+                          📤 Submit
+                        </button>
+                      )}
+                      {ms.state === 2 && (
+                        <>
+                          <button onClick={() => handleMilestoneAction(ms.id, 5)} className="btn btn-success" style={{ padding: "6px 12px", fontSize: 11 }}>
+                            ✅ Approve
+                          </button>
+                          <button onClick={() => handleMilestoneAction(ms.id, 4)} className="btn btn-danger" style={{ padding: "6px 12px", fontSize: 11 }}>
+                            ❌ Reject
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                  <div style={{ padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600, background: st.bg, color: st.color }}>{st.label}</div>
+                </div>
               </div>
             );
           })}
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", gap: 12, marginTop: 32, flexWrap: "wrap" }}>
-          <button className="btn btn-primary">⚡ Release Payment</button>
-          <button className="btn btn-danger">🚨 Raise Dispute</button>
-          <button className="btn btn-secondary">❌ Cancel Pact</button>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 24 }}>
+          {pact.state === "created" && (
+            <button onClick={handleFundPact} className="btn btn-primary shimmer-btn" style={{ padding: "12px 28px" }}>
+              ⚡ Fund Pact
+            </button>
+          )}
+          {pact.state === "active" && (
+            <>
+              <button className="btn btn-danger">🚨 Raise Dispute</button>
+              <button onClick={handleCancelPact} className="btn btn-secondary" style={{ padding: "12px 28px" }}>
+                ❌ Cancel Pact
+              </button>
+            </>
+          )}
+          {pact.state === "completed" && (
+            <div className="badge badge-success" style={{ fontSize: 14, padding: "10px 20px" }}>
+              🏆 Project Completed Successfully
+            </div>
+          )}
+          {pact.state === "disputed" && (
+            <div className="badge badge-danger" style={{ fontSize: 14, padding: "10px 20px" }}>
+              🚨 Under Arbitration
+            </div>
+          )}
+          {pact.state === "cancelled" && (
+            <div className="badge badge-danger" style={{ fontSize: 14, padding: "10px 20px" }}>
+              ❌ Pact Cancelled & Refunded
+            </div>
+          )}
         </div>
       </div>
     </div>
