@@ -1,26 +1,29 @@
 "use client";
-import { useState } from "react";
-
-const MOCK_PACTS = [
-  { id: 1, title: "DeFi Dashboard UI/UX", provider: "SP2J...K4M", amount: "5,000 STX", milestones: 4, completed: 2, state: "active", deadline: "Jun 15, 2026" },
-  { id: 2, title: "Smart Contract Audit", provider: "SP3F...R2A", amount: "3,200 STX", milestones: 3, completed: 3, state: "completed", deadline: "May 28, 2026" },
-  { id: 3, title: "NFT Marketplace Backend", provider: "SP1Q...W8N", amount: "8,500 STX", milestones: 5, completed: 0, state: "funded", deadline: "Jul 01, 2026" },
-  { id: 4, title: "Token Bridge Integration", provider: "SP4R...T6P", amount: "12,000 STX", milestones: 6, completed: 1, state: "disputed", deadline: "Jun 20, 2026" },
-];
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { pactStore } from "@/lib/pactStore";
+import { Pact } from "@/lib/types";
 
 const stateColors: Record<string, { bg: string; color: string }> = {
+  created: { bg: "rgba(148,163,184,0.12)", color: "#94a3b8" },
+  funded: { bg: "rgba(245,158,11,0.12)", color: "#f59e0b" },
   active: { bg: "rgba(59,130,246,0.12)", color: "#3b82f6" },
   completed: { bg: "rgba(34,197,94,0.12)", color: "#22c55e" },
-  funded: { bg: "rgba(245,158,11,0.12)", color: "#f59e0b" },
   disputed: { bg: "rgba(239,68,68,0.12)", color: "#ef4444" },
+  cancelled: { bg: "rgba(239,68,68,0.12)", color: "#b91c1c" },
 };
 
 export default function DashboardPage() {
+  const [pacts, setPacts] = useState<Pact[]>([]);
   const [tab, setTab] = useState<"all" | "active" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"deadline" | "amount" | "default">("default");
 
-  const filtered = MOCK_PACTS.filter(p => {
+  useEffect(() => {
+    setPacts(pactStore.getPacts());
+  }, []);
+
+  const filtered = pacts.filter(p => {
     if (tab !== "all" && p.state !== tab) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -29,8 +32,8 @@ export default function DashboardPage() {
     return true;
   }).sort((a, b) => {
     if (sortBy === "amount") {
-      const amountA = parseInt(a.amount.replace(/,/g, ''));
-      const amountB = parseInt(b.amount.replace(/,/g, ''));
+      const amountA = parseInt(a.totalAmount.replace(/[^0-9]/g, '')) || 0;
+      const amountB = parseInt(b.totalAmount.replace(/[^0-9]/g, '')) || 0;
       return amountB - amountA;
     }
     if (sortBy === "deadline") {
@@ -43,7 +46,11 @@ export default function DashboardPage() {
     const headers = ["ID", "Title", "Provider", "Amount", "Milestones", "Completed", "State", "Deadline"];
     const csvContent = [
       headers.join(","),
-      ...filtered.map(p => `${p.id},"${p.title}","${p.provider}","${p.amount}",${p.milestones},${p.completed},${p.state},"${p.deadline}"`)
+      ...filtered.map(p => {
+        const total = p.milestones.length;
+        const completed = p.milestones.filter(m => m.state >= 3).length;
+        return `${p.id},"${p.title}","${p.provider}","${p.totalAmount}",${total},${completed},${p.state},"${p.deadline}"`;
+      })
     ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -68,7 +75,7 @@ export default function DashboardPage() {
         {/* Stats Row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 40 }}>
           {[
-            { label: "Active Pacts", value: "3", icon: "📋" },
+            { label: "Active Pacts", value: pacts.filter(p => p.state === "active").length.toString(), icon: "📋" },
             { label: "Total Earned", value: "12,400 STX", icon: "💰" },
             { label: "Reputation Score", value: "87", icon: "⭐" },
             { label: "Completion Rate", value: "96%", icon: "✅" },
@@ -139,33 +146,42 @@ export default function DashboardPage() {
 
         {/* Pacts List */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {filtered.map(p => (
-            <div key={p.id} className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{p.title}</div>
-                <div style={{ fontSize: 13, color: "#64748b", fontFamily: "var(--font-mono)" }}>Provider: {p.provider}</div>
-              </div>
-              <div style={{ textAlign: "center", minWidth: 100 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.amount}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>Value</div>
-              </div>
-              <div style={{ textAlign: "center", minWidth: 100 }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{p.completed}/{p.milestones}</div>
-                <div style={{ width: 80, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", marginTop: 6 }}>
-                  <div style={{ width: `${(p.completed / p.milestones) * 100}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg, #6366f1, #8b5cf6)", transition: "width 0.5s ease" }} />
+          {filtered.map(p => {
+            const total = p.milestones.length;
+            const completed = p.milestones.filter(m => m.state >= 3).length;
+            const pct = total > 0 ? (completed / total) * 100 : 0;
+            return (
+              <Link key={p.id} href={`/pacts?id=${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                <div className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", cursor: "pointer", transition: "transform 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+                  onMouseLeave={e => e.currentTarget.style.transform = "none"}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{p.title}</div>
+                    <div style={{ fontSize: 13, color: "#64748b", fontFamily: "var(--font-mono)" }}>Provider: {p.provider}</div>
+                  </div>
+                  <div style={{ textAlign: "center", minWidth: 100 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.totalAmount}</div>
+                    <div style={{ fontSize: 12, color: "#64748b" }}>Value</div>
+                  </div>
+                  <div style={{ textAlign: "center", minWidth: 100 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{completed}/{total}</div>
+                    <div style={{ width: 80, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", marginTop: 6 }}>
+                      <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg, #6366f1, #8b5cf6)", transition: "width 0.5s ease" }} />
+                    </div>
+                    <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>Milestones</div>
+                  </div>
+                  <div style={{ textAlign: "center", minWidth: 80 }}>
+                    <div style={{ fontSize: 12, color: "#64748b" }}>{p.deadline}</div>
+                  </div>
+                  <div style={{
+                    padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
+                    background: stateColors[p.state]?.bg, color: stateColors[p.state]?.color,
+                    textTransform: "capitalize",
+                  }}>{p.state}</div>
                 </div>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>Milestones</div>
-              </div>
-              <div style={{ textAlign: "center", minWidth: 80 }}>
-                <div style={{ fontSize: 12, color: "#64748b" }}>{p.deadline}</div>
-              </div>
-              <div style={{
-                padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
-                background: stateColors[p.state]?.bg, color: stateColors[p.state]?.color,
-                textTransform: "capitalize",
-              }}>{p.state}</div>
-            </div>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
