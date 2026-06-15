@@ -45,6 +45,64 @@ export default function CreatePactPage() {
     }
   };
 
+  const validateStep1 = () => {
+    setError(null);
+    if (!title.trim()) {
+      setError("Pact Title is required.");
+      return false;
+    }
+    if (!description.trim()) {
+      setError("Pact Description is required.");
+      return false;
+    }
+    if (!provider.trim() || !provider.startsWith("SP") || provider.length < 30) {
+      setError("Please enter a valid Stacks address (starting with SP).");
+      return false;
+    }
+    const amt = parseFloat(totalAmount);
+    if (isNaN(amt) || amt <= 0) {
+      setError("Total Amount must be a positive number.");
+      return false;
+    }
+    if (!deadline) {
+      setError("Please select a deadline.");
+      return false;
+    }
+    const dl = new Date(deadline);
+    if (dl <= new Date()) {
+      setError("Deadline must be a future date.");
+      return false;
+    }
+    return true;
+  };
+
+  const validateStep2 = () => {
+    setError(null);
+    for (let i = 0; i < milestones.length; i++) {
+      const m = milestones[i];
+      if (!m.title.trim()) {
+        setError(`Milestone ${i + 1} Title is required.`);
+        return false;
+      }
+      if (!m.description.trim()) {
+        setError(`Milestone ${i + 1} Description is required.`);
+        return false;
+      }
+      const amt = parseFloat(m.amount);
+      if (isNaN(amt) || amt <= 0) {
+        setError(`Milestone ${i + 1} Amount must be a positive number.`);
+        return false;
+      }
+    }
+    const sum = milestones.reduce((s, m) => s + (parseFloat(m.amount) || 0), 0);
+    const total = parseFloat(totalAmount) || 0;
+    if (Math.abs(sum - total) > 0.01) {
+      setError(`The sum of milestones (${sum} STX) must equal the total Pact amount (${total} STX). Difference: ${Math.abs(sum - total).toFixed(2)} STX.`);
+      return false;
+    }
+    return true;
+  };
+
   const handleCreatePact = async () => {
     if (!provider || !totalAmount || !title || !description) {
       setError("Please fill out all required fields.");
@@ -176,7 +234,7 @@ export default function CreatePactPage() {
                   <input className="input-field" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} />
                 </div>
               </div>
-              <button className="btn btn-primary" style={{ alignSelf: "flex-end", padding: "12px 32px" }} onClick={() => setStep(2)}>
+              <button className="btn btn-primary" style={{ alignSelf: "flex-end", padding: "12px 32px" }} onClick={() => { if (validateStep1()) setStep(2); }}>
                 Next: Milestones →
               </button>
             </div>
@@ -212,7 +270,7 @@ export default function CreatePactPage() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
               <button className="btn btn-secondary" onClick={() => setStep(1)}>← Back</button>
-              <button className="btn btn-primary" onClick={() => setStep(3)}>Review Pact →</button>
+              <button className="btn btn-primary" onClick={() => { if (validateStep2()) setStep(3); }}>Review Pact →</button>
             </div>
           </div>
         )}
