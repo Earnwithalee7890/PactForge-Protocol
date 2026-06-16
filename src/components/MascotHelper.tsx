@@ -1,191 +1,100 @@
 "use client";
 import { useState, useEffect } from "react";
-import MascotAvatar from "./MascotAvatar";
-
-const SLIDES = [
-  {
-    title: "Hi there! I'm Forgey! 👋",
-    text: "Your trustless escrow assistant. I'm here to explain how PactForge secures your agreements on Bitcoin L2!",
-    badge: "Mascot Helper"
-  },
-  {
-    title: "🔒 Smart Escrow Contracts",
-    text: "Clients deposit funds securely into Clarity smart contracts. Funds are locked safe and sound — no intermediaries, no rugs.",
-    badge: "Escrow Logic"
-  },
-  {
-    title: "📊 Milestone Payments",
-    text: "Projects are divided into milestones. Payment is automatically released only when you verify and approve deliverables.",
-    badge: "Milestones"
-  },
-  {
-    title: "⚖️ Staked Arbitration",
-    text: "If any conflict arises, staked arbiters review deliverables and vote on-chain to refund or release funds fairly.",
-    badge: "Arbitration"
-  },
-  {
-    title: "₿ Bitcoin L2 Security",
-    text: "All agreements are finalized on Stacks, inheriting the full security and decentralization of the core Bitcoin blockchain!",
-    badge: "Bitcoin L2"
-  }
-];
+import { usePathname } from "next/navigation";
+import LottieAnimation from "./LottieAnimation";
 
 export default function MascotHelper() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [showNotification, setShowNotification] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("Hi! I'm Forge, your Pact assistant.");
+  const pathname = usePathname();
 
-  // Show a pulsing notification tip after 3 seconds to invite the user
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowNotification(true);
-    }, 3000);
+    // Contextual hints based on route
+    if (pathname === '/dashboard') {
+      setMessage("Welcome to your Dashboard! Here you can quickly view all your active pacts and milestones. Try exporting your data to CSV!");
+    } else if (pathname === '/create-pact') {
+      setMessage("Creating a new Pact? Make sure your milestone amounts add up exactly to the total amount.");
+    } else if (pathname === '/reputation') {
+      setMessage("This is your Soul-Bound Reputation profile! Complete pacts to rank up and earn governance tokens.");
+    } else if (pathname === '/disputes') {
+      setMessage("Welcome to the DAO Arbitration hub. Stake tokens to become an arbiter and resolve disputes.");
+    } else if (pathname?.startsWith('/pacts')) {
+      setMessage("This is the Pact Detail view. You can flag obstacles if you are blocked, or submit deliverables when ready!");
+    } else {
+      setMessage("Hi! I'm Forge. Let me know if you need help navigating the protocol.");
+    }
+
+    // Auto-pop the helper on route change for 5 seconds if not explicitly closed recently
+    setOpen(true);
+    const timer = setTimeout(() => setOpen(false), 6000);
     return () => clearTimeout(timer);
-  }, []);
-
-  const handleNext = () => {
-    setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
-  };
-
-  const handlePrev = () => {
-    setCurrentSlide((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
-  };
-
-  const handleClose = () => {
-    setIsOpen(false);
-    setShowNotification(false);
-  };
+  }, [pathname]);
 
   return (
-    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-      {/* Speech Bubble */}
-      {isOpen && (
-        <div style={{
-          width: 320,
-          background: "rgba(15, 23, 42, 0.95)",
-          backdropFilter: "blur(12px)",
-          border: "1px solid rgba(249, 115, 22, 0.35)",
-          borderRadius: 20,
-          padding: 20,
-          marginBottom: 16,
-          boxShadow: "0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(249, 115, 22, 0.15)",
-          animation: "scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-          position: "relative",
-        }}>
-          {/* Close button */}
+    <div style={{
+      position: "fixed",
+      bottom: 24,
+      right: 24,
+      zIndex: 9999,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-end",
+      pointerEvents: "none" // allow clicking through empty space
+    }}>
+      {/* Tooltip Dialog */}
+      <div style={{
+        background: "rgba(30, 41, 59, 0.95)",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(99, 102, 241, 0.3)",
+        borderRadius: "16px 16px 0px 16px",
+        padding: "16px 20px",
+        width: 260,
+        marginBottom: 16,
+        boxShadow: "0 10px 40px rgba(0,0,0,0.3), 0 0 20px rgba(99, 102, 241, 0.15)",
+        transform: open ? "scale(1) translateY(0)" : "scale(0.8) translateY(20px)",
+        opacity: open ? 1 : 0,
+        transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        pointerEvents: open ? "auto" : "none",
+        transformOrigin: "bottom right"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8" }}>Forge Helper</span>
           <button 
-            onClick={handleClose} 
-            style={{
-              position: "absolute", top: 12, right: 12,
-              background: "none", border: "none", color: "#64748b",
-              cursor: "pointer", fontSize: 16, fontWeight: 700
-            }}
+            onClick={() => setOpen(false)}
+            style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 16 }}
           >
-            ✕
+            ×
           </button>
-
-          {/* Interactive Talking 3D Mascot Character */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-            <MascotAvatar size={90} />
-          </div>
-
-          <div style={{ display: "inline-block", background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.25)", borderRadius: 6, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: "#ffedd5", marginBottom: 12 }}>
-            {SLIDES[currentSlide].badge}
-          </div>
-
-          <h4 style={{ fontSize: 16, fontWeight: 800, color: "#f1f5f9", marginBottom: 8 }}>
-            {SLIDES[currentSlide].title}
-          </h4>
-          <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, marginBottom: 18 }}>
-            {SLIDES[currentSlide].text}
-          </p>
-
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontSize: 11, color: "#64748b" }}>
-              {currentSlide + 1} / {SLIDES.length}
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {currentSlide > 0 && (
-                <button 
-                  onClick={handlePrev} 
-                  style={{
-                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 8, padding: "6px 12px", fontSize: 11, color: "#94a3b8", cursor: "pointer"
-                  }}
-                >
-                  Back
-                </button>
-              )}
-              <button 
-                onClick={handleNext} 
-                style={{
-                  background: "linear-gradient(135deg, #f97316, #ea580c)", border: "none",
-                  borderRadius: 8, padding: "6px 16px", fontSize: 11, color: "white", fontWeight: 600, cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(249,115,22,0.2)"
-                }}
-              >
-                {currentSlide === SLIDES.length - 1 ? "Start Over" : "Next →"}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
-
-      {/* Floating Notification Tooltip */}
-      {showNotification && !isOpen && (
-        <div style={{
-          background: "rgba(249, 115, 22, 0.95)",
-          color: "white",
-          borderRadius: 12,
-          padding: "10px 16px",
-          fontSize: 12,
-          fontWeight: 600,
-          marginBottom: 12,
-          boxShadow: "0 8px 24px rgba(249, 115, 22, 0.3)",
-          animation: "bounceFloat 2s ease-in-out infinite",
-          pointerEvents: "none",
-          position: "relative",
-          whiteSpace: "nowrap"
-        }}>
-          💡 Psst! Click me to learn how PactForge works!
-          <div style={{
-            position: "absolute", bottom: -6, right: 36,
-            width: 12, height: 12, background: "rgba(249, 115, 22, 0.95)",
-            transform: "rotate(45deg)"
-          }} />
-        </div>
-      )}
+        <p style={{ fontSize: 13, color: "#e2e8f0", lineHeight: 1.5, margin: 0 }}>
+          {message}
+        </p>
+      </div>
 
       {/* Floating Mascot Button */}
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
+      <div 
+        onClick={() => setOpen(!open)}
+        className="pulse-primary"
         style={{
-          width: 72, height: 72,
+          width: 64,
+          height: 64,
           borderRadius: "50%",
-          background: isOpen ? "rgba(15, 23, 42, 0.9)" : "linear-gradient(135deg, #1e293b, #0f172a)",
-          border: isOpen ? "2px solid #f97316" : "2px solid rgba(255, 255, 255, 0.08)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(249, 115, 22, 0.2)",
-          cursor: "pointer",
+          background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+          boxShadow: "0 8px 24px rgba(99, 102, 241, 0.4)",
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
-          overflow: "hidden",
-          transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+          alignItems: "center",
+          cursor: "pointer",
+          pointerEvents: "auto",
+          transition: "transform 0.2s ease",
+          border: "2px solid rgba(255,255,255,0.1)",
+          transform: open ? "scale(0.9)" : "scale(1)"
         }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
+        onMouseLeave={(e) => e.currentTarget.style.transform = open ? "scale(0.9)" : "scale(1)"}
       >
-        <MascotAvatar size={64} />
-      </button>
-
-      <style jsx global>{`
-        @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.9) translateY(10px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes bounceFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
-        }
-      `}</style>
+        <LottieAnimation src="https://assets10.lottiefiles.com/packages/lf20_myejio2g.json" style={{ width: 44, height: 44 }} />
+      </div>
     </div>
   );
 }
