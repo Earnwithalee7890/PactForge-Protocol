@@ -166,6 +166,17 @@ Built with **Next.js 16** (App Router) and a custom dark-mode design system:
 - Address display with shorten utility
 - Connect/Disconnect flow
 
+### 🎮 Interactive Simulator Features
+PactForge includes a fully featured local simulator so you can test out escrow mechanics without spending testnet STX:
+- **Interactive Floating Mascot**: Meet Forge! A contextual helper mascot that provides guidance and tips as you navigate the app.
+- **Dynamic Activities Timeline**: The Reputation profile tracks and visualizes real-time activities such as completed milestones, newly created pacts, and escalated disputes.
+- **Global Notification System**: Real-time toast notifications keep you informed when milestones are approved or obstacles are flagged.
+- **Milestone Confetti**: Delivering work feels good! Massive confetti celebrations trigger upon successful milestone and pact completions.
+- **Drafts System**: Save incomplete pacts locally as drafts, allowing you to return and finish setting up escrows later.
+- **Dark/Light Mode**: Full theme support with preferences saved in local storage.
+- **Premium 404 & Error Boundaries**: Graceful error handling and beautiful missing page states ensuring a seamless user experience.
+- **Interactive Dashboard Charts**: Visualize your cumulative payouts and earnings over time directly from the dashboard.
+
 ---
 
 ## 🚀 Getting Started
