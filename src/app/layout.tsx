@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import { Providers } from "./providers";
 import MascotHelper from "@/components/MascotHelper";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { ToastProvider } from "@/components/Toaster";
 
 export const metadata: Metadata = {
   title: "PactForge Protocol | Trustless Escrow on Bitcoin L2",
@@ -29,11 +30,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <ThemeProvider>
-          <Providers>
-            <Navbar />
-            <main>{children}</main>
-            <MascotHelper />
-          </Providers>
+          <ToastProvider>
+            <Providers>
+              <Navbar />
+              <main>{children}</main>
+              <MascotHelper />
+            </Providers>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

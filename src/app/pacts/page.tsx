@@ -2,8 +2,10 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import SkeletonLoader from "@/components/SkeletonLoader";
+import { useToast } from "@/components/Toaster";
 import { pactStore } from "@/lib/pactStore";
 import { Pact } from "@/lib/types";
+import confetti from "canvas-confetti";
 
 const msColors: Record<number, { bg: string; color: string; label: string }> = {
   0: { bg: "rgba(148,163,184,0.12)", color: "#94a3b8", label: "Pending" },
@@ -18,6 +20,7 @@ function PactDetailContent() {
   const searchParams = useSearchParams();
   const idParam = searchParams.get("id");
   const [pact, setPact] = useState<Pact | null>(null);
+  const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
 
@@ -75,6 +78,25 @@ function PactDetailContent() {
     const updated = pactStore.updateMilestoneState(pact.id, milestoneId, newState);
     if (updated) {
       setPact({ ...updated });
+      if (newState === 1) toast("Milestone started!", "info");
+      if (newState === 2) toast("Milestone submitted for review.", "info");
+      if (newState === 5) {
+        toast("Milestone approved! Funds released.", "success");
+        if (updated.state === "completed") {
+          const duration = 3 * 1000;
+          const end = Date.now() + duration;
+          const frame = () => {
+            confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#6366f1', '#22c55e'] });
+            confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#6366f1', '#22c55e'] });
+            if (Date.now() < end) requestAnimationFrame(frame);
+          };
+          frame();
+          toast("Pact completed! Massive payout!", "success");
+        } else {
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+      }
+      if (newState === 4) toast("Milestone rejected.", "error");
     }
   };
 
@@ -85,6 +107,7 @@ function PactDetailContent() {
     if (p.milestones.length > 0) p.milestones[0].state = 1; // Mark first milestone In Progress
     pactStore.updatePact(p);
     setPact(p);
+    toast("Pact successfully funded and active!", "success");
   };
 
   const handleCancelPact = () => {
@@ -92,6 +115,7 @@ function PactDetailContent() {
     p.state = "cancelled";
     pactStore.updatePact(p);
     setPact(p);
+    toast("Pact cancelled. Funds returned.", "info");
   };
 
   const handleRaiseDispute = () => {
@@ -103,6 +127,7 @@ function PactDetailContent() {
       setShowDisputeModal(false);
       setDisputeTitle("");
       setDisputeReason("");
+      toast("Dispute escalated to DAO arbiters.", "warning");
     }
   };
 
@@ -113,11 +138,13 @@ function PactDetailContent() {
     setShowObstacleModal(false);
     setObstacleTargetId(null);
     setObstacleText("");
+    toast("Obstacle flagged.", "warning");
   };
 
   const handleClearObstacle = (milestoneId: number) => {
     const updated = pactStore.clearMilestoneObstacle(pact.id, milestoneId);
     if (updated) setPact({ ...updated });
+    toast("Obstacle cleared.", "success");
   };
 
   const completedMs = pact.milestones.filter(m => m.state >= 3).length;
