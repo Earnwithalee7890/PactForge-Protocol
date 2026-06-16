@@ -6,6 +6,7 @@ export interface Milestone {
   description: string;
   amount: string; // e.g. "1,000 STX" or raw number representation
   state: MilestoneState;
+  obstacle?: string;
 }
 
 export type PactState = 'created' | 'funded' | 'active' | 'completed' | 'disputed' | 'cancelled';

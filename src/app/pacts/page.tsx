@@ -41,6 +41,10 @@ function PactDetailContent() {
   const [disputeTitle, setDisputeTitle] = useState("");
   const [disputeReason, setDisputeReason] = useState("");
 
+  const [showObstacleModal, setShowObstacleModal] = useState(false);
+  const [obstacleTargetId, setObstacleTargetId] = useState<number | null>(null);
+  const [obstacleText, setObstacleText] = useState("");
+
   const handleMilestoneAction = (milestoneId: number, newState: any) => {
     const updated = pactStore.updateMilestoneState(pact.id, milestoneId, newState);
     if (updated) {
@@ -74,6 +78,20 @@ function PactDetailContent() {
       setDisputeTitle("");
       setDisputeReason("");
     }
+  };
+
+  const handleReportObstacle = () => {
+    if (!obstacleTargetId || !obstacleText.trim()) return;
+    const updated = pactStore.reportMilestoneObstacle(pact.id, obstacleTargetId, obstacleText);
+    if (updated) setPact({ ...updated });
+    setShowObstacleModal(false);
+    setObstacleTargetId(null);
+    setObstacleText("");
+  };
+
+  const handleClearObstacle = (milestoneId: number) => {
+    const updated = pactStore.clearMilestoneObstacle(pact.id, milestoneId);
+    if (updated) setPact({ ...updated });
   };
 
   const completedMs = pact.milestones.filter(m => m.state >= 3).length;
@@ -161,10 +179,15 @@ function PactDetailContent() {
                           🚀 Start
                         </button>
                       )}
-                      {(ms.state === 1 || ms.state === 4) && (
-                        <button onClick={() => handleMilestoneAction(ms.id, 2)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: 11 }}>
-                          📤 Submit
-                        </button>
+                      {(ms.state === 1 || ms.state === 4) && !ms.obstacle && (
+                        <>
+                          <button onClick={() => handleMilestoneAction(ms.id, 2)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: 11 }}>
+                            📤 Submit
+                          </button>
+                          <button onClick={() => { setObstacleTargetId(ms.id); setShowObstacleModal(true); }} className="btn btn-danger" style={{ padding: "6px 12px", fontSize: 11, background: "rgba(239,68,68,0.15)", color: "#ef4444" }}>
+                            ⚠️ Flag Obstacle
+                          </button>
+                        </>
                       )}
                       {ms.state === 2 && (
                         <>
@@ -180,6 +203,19 @@ function PactDetailContent() {
                   )}
                   <div style={{ padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600, background: st.bg, color: st.color }}>{st.label}</div>
                 </div>
+                {ms.obstacle && (
+                  <div style={{ width: "100%", marginTop: 12, padding: 16, borderRadius: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                      <div>
+                        <div style={{ color: "#ef4444", fontWeight: 700, fontSize: 13, marginBottom: 4 }}>⚠️ Blocked / Obstacle Reported</div>
+                        <div style={{ fontSize: 13, color: "#f87171" }}>{ms.obstacle}</div>
+                      </div>
+                      <button onClick={() => handleClearObstacle(ms.id)} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: 11, borderColor: "rgba(239,68,68,0.4)" }}>
+                        Clear Block
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -242,6 +278,30 @@ function PactDetailContent() {
             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
               <button onClick={() => setShowDisputeModal(false)} className="btn btn-secondary" style={{ padding: "10px 20px" }}>Cancel</button>
               <button onClick={handleRaiseDispute} className="btn btn-danger" style={{ padding: "10px 20px" }}>Escalate to DAO</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Obstacle Modal Dialog */}
+      {showObstacleModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)",
+          display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1100,
+        }}>
+          <div className="glass-card" style={{ padding: 36, width: "100%", maxWidth: 450, display: "flex", flexDirection: "column", gap: 20 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: "#ef4444" }}>⚠️ Report Milestone Obstacle</h2>
+            <p style={{ color: "#94a3b8", fontSize: 13 }}>Flag this milestone if you are blocked or encountering an issue preventing progress.</p>
+            
+            <div className="input-group">
+              <label className="input-label">Obstacle Description</label>
+              <textarea className="input-field" placeholder="E.g. Waiting on API keys from the client..." value={obstacleText} onChange={e => setObstacleText(e.target.value)} style={{ minHeight: 100 }} />
+            </div>
+
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
+              <button onClick={() => setShowObstacleModal(false)} className="btn btn-secondary" style={{ padding: "10px 20px" }}>Cancel</button>
+              <button onClick={handleReportObstacle} className="btn btn-danger" style={{ padding: "10px 20px" }}>Report Block</button>
             </div>
           </div>
         </div>

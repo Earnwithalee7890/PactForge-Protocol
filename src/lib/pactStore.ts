@@ -213,6 +213,28 @@ export const pactStore = {
     return pact;
   },
 
+  reportMilestoneObstacle(pactId: number, milestoneId: number, obstacleDesc: string): Pact | undefined {
+    const pact = this.getPactById(pactId);
+    if (!pact) return undefined;
+    const ms = pact.milestones.find(m => m.id === milestoneId);
+    if (!ms) return pact;
+
+    ms.obstacle = obstacleDesc;
+    this.updatePact(pact);
+    return pact;
+  },
+
+  clearMilestoneObstacle(pactId: number, milestoneId: number): Pact | undefined {
+    const pact = this.getPactById(pactId);
+    if (!pact) return undefined;
+    const ms = pact.milestones.find(m => m.id === milestoneId);
+    if (!ms) return pact;
+
+    delete ms.obstacle;
+    this.updatePact(pact);
+    return pact;
+  },
+
   raiseDispute(pactId: number, title: string, reason: string): Dispute | undefined {
     const pact = this.getPactById(pactId);
     if (!pact) return undefined;
