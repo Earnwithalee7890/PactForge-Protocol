@@ -4,6 +4,7 @@ import Link from "next/link";
 import { pactStore } from "@/lib/pactStore";
 import { Pact } from "@/lib/types";
 import SkeletonLoader from "@/components/SkeletonLoader";
+import PayoutChart from "@/components/PayoutChart";
 
 const stateColors: Record<string, { bg: string; color: string }> = {
   created: { bg: "rgba(148,163,184,0.12)", color: "#94a3b8" },
@@ -128,6 +129,9 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+
+        {/* Payouts Chart */}
+        {!loading && <PayoutChart />}
 
         {/* Toolbar: Tabs, Search, Sort */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
