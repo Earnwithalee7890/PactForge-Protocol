@@ -70,12 +70,15 @@ export default function ReputationPage() {
   
   const [localReputation, setLocalReputation] = useState<ReputationProfile | null>(null);
   const [leaderboard, setLeaderboard] = useState<Array<{ rank: number, address: string, score: number, tier: string }>>([]);
+  const [activities, setActivities] = useState<Array<{ date: string; title: string; desc: string; type: string }>>([]);
 
   useEffect(() => {
     if (address) {
       setLocalReputation(pactStore.getReputation(address));
+      setActivities(pactStore.getActivityTimeline(address));
     } else {
       setLocalReputation(null);
+      setActivities([]);
     }
     
     const allReps = pactStore.getAllReputations();
@@ -227,6 +230,39 @@ export default function ReputationPage() {
                 <div style={{ fontSize: 12, color: "#64748b", fontFamily: "var(--font-mono)" }}>
                   Joined at Block Height: #{(812000 + Math.floor(Math.random() * 1000))}
                 </div>
+              </div>
+            </div>
+
+            {/* Activities Timeline */}
+            <div style={{ marginBottom: 40 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>📅 Activities Timeline</h2>
+              <div className="glass-card" style={{ padding: 24 }}>
+                {activities.length === 0 ? (
+                  <div style={{ color: "#64748b", textAlign: "center", padding: 20 }}>No activity recorded yet.</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                    {activities.map((act, i) => (
+                      <div key={i} style={{ display: "flex", gap: 16, position: "relative" }}>
+                        {i !== activities.length - 1 && (
+                          <div style={{ position: "absolute", left: 19, top: 40, bottom: -20, width: 2, background: "rgba(255,255,255,0.05)" }} />
+                        )}
+                        <div style={{ 
+                          width: 40, height: 40, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                          background: act.type === 'success' ? "rgba(34,197,94,0.15)" : act.type === 'warning' ? "rgba(245,158,11,0.15)" : "rgba(99,102,241,0.15)",
+                          color: act.type === 'success' ? "#22c55e" : act.type === 'warning' ? "#f59e0b" : "#6366f1",
+                          fontSize: 18
+                        }}>
+                          {act.type === 'success' ? '🏆' : act.type === 'warning' ? '⚖️' : '📝'}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 2 }}>{act.title}</div>
+                          <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 4 }}>{act.desc}</div>
+                          <div style={{ fontSize: 12, color: "#64748b", fontFamily: "var(--font-mono)" }}>{new Date(act.date).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </>

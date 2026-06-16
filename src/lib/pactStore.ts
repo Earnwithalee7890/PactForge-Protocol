@@ -235,6 +235,44 @@ export const pactStore = {
     return pact;
   },
 
+  getActivityTimeline(address: string): Array<{ date: string; title: string; desc: string; type: 'success' | 'warning' | 'info' }> {
+    const pacts = this.getPacts().filter(p => p.client === address || p.provider === address);
+    const activities: Array<{ date: string; title: string; desc: string; type: 'success' | 'warning' | 'info' }> = [];
+    
+    pacts.forEach(p => {
+      // Created
+      activities.push({
+        date: p.createdAt,
+        title: `Pact Created: ${p.title}`,
+        desc: p.client === address ? "You created a new agreement." : "You were hired for a new agreement.",
+        type: 'info'
+      });
+
+      // Disputes
+      if (p.disputeId) {
+        activities.push({
+          date: p.deadline, // approximation
+          title: `Dispute Raised: ${p.title}`,
+          desc: "An arbitration process was initiated for this pact.",
+          type: 'warning'
+        });
+      }
+
+      // Completed
+      if (p.state === 'completed') {
+        activities.push({
+          date: p.deadline, // approximation
+          title: `Pact Completed: ${p.title}`,
+          desc: "All milestones were successfully delivered and funds released.",
+          type: 'success'
+        });
+      }
+    });
+
+    // Sort by date descending
+    return activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  },
+
   raiseDispute(pactId: number, title: string, reason: string): Dispute | undefined {
     const pact = this.getPactById(pactId);
     if (!pact) return undefined;
