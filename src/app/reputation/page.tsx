@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWallet } from "@/context/WalletContext";
 import LottieAnimation from "@/components/LottieAnimation";
+import { pactStore } from "@/lib/pactStore";
+import { ReputationProfile } from "@/lib/types";
 
 const TIERS = [
   { 
@@ -41,19 +43,19 @@ const TIERS = [
   },
 ];
 
-const LEADERBOARD = [
-  { rank: 1, address: "SP2F...FBT", score: 120, tier: "Diamond" },
-  { rank: 2, address: "SP3F...R2A", score: 85, tier: "Gold" },
-  { rank: 3, address: "SP1Q...W8N", score: 42, tier: "Silver" },
-  { rank: 4, address: "SP4R...T6P", score: 18, tier: "Bronze" },
-  { rank: 5, address: "SP5N...V3Q", score: 0, tier: "Unranked" },
-];
+// Determine current tier from score
+const getTierInfo = (score: number) => {
+  if (score >= 100) return { current: TIERS[4], next: null, progress: 100 };
+  if (score >= 50) return { current: TIERS[3], next: TIERS[4], progress: ((score - 50) / 50) * 100 };
+  if (score >= 20) return { current: TIERS[2], next: TIERS[3], progress: ((score - 20) / 30) * 100 };
+  if (score >= 1) return { current: TIERS[1], next: TIERS[2], progress: ((score - 1) / 19) * 100 };
+  return { current: TIERS[0], next: TIERS[1], progress: 0 };
+};
 
 export default function ReputationPage() {
   const { 
     address, 
     connected, 
-    reputation, 
     isReputationLoading, 
     initializeReputation, 
     mintPFG,
@@ -65,23 +67,41 @@ export default function ReputationPage() {
   const [recipient, setRecipient] = useState<string>("");
   const [minting, setMinting] = useState<boolean>(false);
   const [initializing, setInitializing] = useState<boolean>(false);
+  
+  const [localReputation, setLocalReputation] = useState<ReputationProfile | null>(null);
+  const [leaderboard, setLeaderboard] = useState<Array<{ rank: number, address: string, score: number, tier: string }>>([]);
 
-  // Determine current tier from score
-  const getTierInfo = (score: number) => {
-    if (score >= 100) return { current: TIERS[4], next: null, progress: 100 };
-    if (score >= 50) return { current: TIERS[3], next: TIERS[4], progress: ((score - 50) / 50) * 100 };
-    if (score >= 20) return { current: TIERS[2], next: TIERS[3], progress: ((score - 20) / 30) * 100 };
-    if (score >= 1) return { current: TIERS[1], next: TIERS[2], progress: ((score - 1) / 19) * 100 };
-    return { current: TIERS[0], next: TIERS[1], progress: 0 };
-  };
+  useEffect(() => {
+    if (address) {
+      setLocalReputation(pactStore.getReputation(address));
+    } else {
+      setLocalReputation(null);
+    }
+    
+    const allReps = pactStore.getAllReputations();
+    const sorted = allReps.sort((a, b) => b.score - a.score);
+    const generatedLeaderboard = sorted.map((r, i) => {
+      const tierInfo = getTierInfo(r.score);
+      return {
+        rank: i + 1,
+        address: r.address,
+        score: r.score,
+        tier: tierInfo.current.name
+      };
+    });
+    setLeaderboard(generatedLeaderboard);
+  }, [address]);
 
-  const score = reputation?.score || 0;
+  const score = localReputation?.score || 0;
   const { current: currentTier, next: nextTier, progress } = getTierInfo(score);
 
   const handleInitialize = async () => {
     setInitializing(true);
     try {
       await initializeReputation();
+      if (address) {
+        setLocalReputation(pactStore.getReputation(address));
+      }
     } finally {
       setInitializing(false);
     }
@@ -104,7 +124,7 @@ export default function ReputationPage() {
     <div style={{ minHeight: "100vh", paddingTop: 96, paddingBottom: 60 }}>
       <div className="container">
         <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 6 }}>Reputation & Governance</h1>
-        <p style={{ color: "#94a3b8", marginBottom: 40 }}>Soul-bound on-chain reputation tracking and token utilities on Stacks Mainnet.</p>
+        <p style={{ color: "#94a3b8", marginBottom: 40 }}>Soul-bound on-chain reputation tracking and token utilities (Simulated).</p>
 
         {!connected ? (
           <div className="glass-card" style={{ padding: 40, textAlign: "center", marginBottom: 32 }}>
@@ -118,9 +138,9 @@ export default function ReputationPage() {
         ) : isReputationLoading ? (
           <div className="glass-card" style={{ padding: 40, textAlign: "center", marginBottom: 32 }}>
             <div style={{ fontSize: 32, marginBottom: 16 }} className="animate-pulse">🔄</div>
-            <p style={{ color: "#94a3b8" }}>Loading live mainnet profile details...</p>
+            <p style={{ color: "#94a3b8" }}>Loading live profile details...</p>
           </div>
-        ) : !reputation ? (
+        ) : !localReputation ? (
           <div className="glass-card" style={{ padding: 40, textAlign: "center", marginBottom: 32,
             background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(139,92,246,0.02))", border: "1px solid rgba(245,158,11,0.2)" }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>
@@ -179,15 +199,15 @@ export default function ReputationPage() {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32 }}>
-              {/* On-Chain Metrics */}
+              {/* Simulated Metrics */}
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>On-Chain Metrics</h2>
+                <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Simulated Profile Metrics</h2>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   {[
-                    { label: "Pacts Completed", value: reputation.pactsCompleted, icon: "📋" },
-                    { label: "Milestones Delivered", value: reputation.milestonesDelivered, icon: "📦" },
-                    { label: "Disputes Won", value: reputation.disputesWon, icon: "🏆" },
-                    { label: "Disputes Lost", value: reputation.disputesLost, icon: "❌" },
+                    { label: "Pacts Completed", value: localReputation.completedPacts, icon: "📋" },
+                    { label: "Disputed Pacts", value: localReputation.disputedPacts, icon: "❌" },
+                    { label: "Total Earned", value: localReputation.totalEarned, icon: "💰" },
+                    { label: "Profile Score", value: localReputation.score, icon: "⭐" },
                   ].map((s, i) => (
                     <div key={i} className="glass-card" style={{ padding: 20, textAlign: "center" }}>
                       <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
@@ -205,7 +225,7 @@ export default function ReputationPage() {
                   PactForge reputation profiles use non-transferable Soul-Bound Tokens. Your performance history is permanently linked to your principal address, preventing identity buying and guaranteeing trust.
                 </p>
                 <div style={{ fontSize: 12, color: "#64748b", fontFamily: "var(--font-mono)" }}>
-                  Joined at Block Height: #{reputation.joinedAt}
+                  Joined at Block Height: #{(812000 + Math.floor(Math.random() * 1000))}
                 </div>
               </div>
             </div>
@@ -237,12 +257,14 @@ export default function ReputationPage() {
 
         {/* Leaderboard */}
         <div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>🏅 On-Chain Leaderboard</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>🏅 Dynamic Leaderboard</h2>
           <div className="glass-card" style={{ padding: 4, overflow: "hidden" }}>
-            {LEADERBOARD.map((l, i) => (
+            {leaderboard.length === 0 ? (
+              <div style={{ padding: 20, textAlign: "center", color: "#64748b" }}>No ranked users yet.</div>
+            ) : leaderboard.map((l, i) => (
               <div key={i} style={{
                 display: "flex", alignItems: "center", gap: 16, padding: "14px 20px",
-                borderBottom: i < LEADERBOARD.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                borderBottom: i < leaderboard.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
                 background: address && l.address.slice(0, 6) === address.slice(0, 6) ? "rgba(99,102,241,0.06)" : "transparent",
               }}>
                 <div style={{ width: 32, textAlign: "center", fontWeight: 800, color: i < 3 ? "#ffd700" : "#64748b", fontSize: 16 }}>#{l.rank}</div>

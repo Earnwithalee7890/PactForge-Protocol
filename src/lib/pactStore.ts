@@ -291,6 +291,11 @@ export const pactStore = {
     return dispute;
   },
 
+  getAllReputations(): ReputationProfile[] {
+    const repMap = getSafe<Record<string, ReputationProfile>>("pactforge_reputation", INITIAL_REPUTATION);
+    return Object.values(repMap);
+  },
+
   getReputation(address: string): ReputationProfile {
     const repMap = getSafe<Record<string, ReputationProfile>>("pactforge_reputation", INITIAL_REPUTATION);
     if (!repMap[address]) {
