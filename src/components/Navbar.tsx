@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useWallet } from "@/context/WalletContext";
+import { useTheme } from "@/context/ThemeContext";
 import { shortenAddress } from "@/lib/stacks";
 
 const NAV_LINKS = [
@@ -17,6 +18,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { address, connected, connecting, connect, disconnect } = useWallet();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -65,8 +67,16 @@ export default function Navbar() {
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = "#f1f5f9"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = "#94a3b8"; e.currentTarget.style.background = "transparent"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#94a3b8"; e.currentTarget.style.background = "transparent"; }}
           >{link.label}</Link>
         ))}
+
+        <button onClick={toggleTheme} style={{
+          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer",
+          fontSize: 14, padding: "6px 12px", borderRadius: 8, color: "#f1f5f9", transition: "all 0.2s"
+        }}>
+          {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+        </button>
 
         {connected ? (
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: 8 }}>

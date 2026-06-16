@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { Providers } from "./providers";
 import MascotHelper from "@/components/MascotHelper";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
   title: "PactForge Protocol | Trustless Escrow on Bitcoin L2",
@@ -27,11 +28,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Providers>
-          <Navbar />
-          <main>{children}</main>
-          <MascotHelper />
-        </Providers>
+        <ThemeProvider>
+          <Providers>
+            <Navbar />
+            <main>{children}</main>
+            <MascotHelper />
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );
