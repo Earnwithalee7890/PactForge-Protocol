@@ -4,11 +4,11 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 type Toast = {
   id: string;
   message: string;
-  type: "success" | "error" | "info";
+  type: "success" | "error" | "info" | "warning";
 };
 
 type ToastContextType = {
-  toast: (message: string, type?: "success" | "error" | "info") => void;
+  toast: (message: string, type?: "success" | "error" | "info" | "warning") => void;
 };
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -16,7 +16,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const toast = useCallback((message: string, type: "success" | "error" | "info" = "info") => {
+  const toast = useCallback((message: string, type: "success" | "error" | "info" | "warning" = "info") => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -39,7 +39,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
       }}>
         {toasts.map(t => (
           <div key={t.id} style={{
-            background: t.type === "success" ? "rgba(34,197,94,0.9)" : t.type === "error" ? "rgba(239,68,68,0.9)" : "rgba(99,102,241,0.9)",
+            background: t.type === "success" ? "rgba(34,197,94,0.9)" : t.type === "error" ? "rgba(239,68,68,0.9)" : t.type === "warning" ? "rgba(245,158,11,0.9)" : "rgba(99,102,241,0.9)",
             color: "#fff",
             padding: "12px 20px",
             borderRadius: 8,
@@ -49,7 +49,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
             animation: "fadeInUp 0.3s ease forwards",
             backdropFilter: "blur(10px)"
           }}>
-            {t.type === "success" ? "✅ " : t.type === "error" ? "❌ " : "ℹ️ "}
+            {t.type === "success" ? "✅ " : t.type === "error" ? "❌ " : t.type === "warning" ? "⚠️ " : "ℹ️ "}
             {t.message}
           </div>
         ))}
