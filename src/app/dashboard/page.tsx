@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { pactStore } from "@/lib/pactStore";
 import { Pact } from "@/lib/types";
+import SkeletonLoader from "@/components/SkeletonLoader";
 
 const stateColors: Record<string, { bg: string; color: string }> = {
   created: { bg: "rgba(148,163,184,0.12)", color: "#94a3b8" },
@@ -18,9 +19,15 @@ export default function DashboardPage() {
   const [tab, setTab] = useState<"all" | "active" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"deadline" | "amount" | "default">("default");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setPacts(pactStore.getPacts());
+    setLoading(true);
+    const timer = setTimeout(() => {
+      setPacts(pactStore.getPacts());
+      setLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
   }, []);
 
   const filtered = pacts.filter(p => {
@@ -97,26 +104,30 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 40 }}>
-          {[
-            { label: "Active Pacts", value: pacts.filter(p => p.state === "active").length.toString(), icon: "📋" },
-            { label: "Total Earned", value: "12,400 STX", icon: "💰" },
-            { label: "Reputation Score", value: "87", icon: "⭐" },
-            { label: "Completion Rate", value: "96%", icon: "✅" },
-          ].map((s, i) => (
-            <div key={i} className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 12, fontSize: 22,
-                background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.15)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>{s.icon}</div>
-              <div>
-                <div style={{ fontSize: 13, color: "#64748b" }}>{s.label}</div>
-                <div className="stat-value" style={{ fontSize: 22 }}>{s.value}</div>
+        {loading ? (
+          <div style={{ marginBottom: 40 }}><SkeletonLoader count={4} type="stat" /></div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 40 }}>
+            {[
+              { label: "Active Pacts", value: pacts.filter(p => p.state === "active").length.toString(), icon: "📋" },
+              { label: "Total Earned", value: "12,400 STX", icon: "💰" },
+              { label: "Reputation Score", value: "87", icon: "⭐" },
+              { label: "Completion Rate", value: "96%", icon: "✅" },
+            ].map((s, i) => (
+              <div key={i} className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 12, fontSize: 22,
+                  background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.15)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>{s.icon}</div>
+                <div>
+                  <div style={{ fontSize: 13, color: "#64748b" }}>{s.label}</div>
+                  <div className="stat-value" style={{ fontSize: 22 }}>{s.value}</div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Toolbar: Tabs, Search, Sort */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
@@ -170,7 +181,13 @@ export default function DashboardPage() {
 
         {/* Pacts List */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {filtered.map(p => {
+          {loading ? (
+            <SkeletonLoader count={4} type="row" />
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#64748b", background: "rgba(255,255,255,0.02)", borderRadius: 16 }}>
+              No pacts found matching your criteria.
+            </div>
+          ) : filtered.map(p => {
             const total = p.milestones.length;
             const completed = p.milestones.filter(m => m.state >= 3).length;
             const pct = total > 0 ? (completed / total) * 100 : 0;

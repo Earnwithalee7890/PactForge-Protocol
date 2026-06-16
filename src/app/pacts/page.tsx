@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import SkeletonLoader from "@/components/SkeletonLoader";
 import { pactStore } from "@/lib/pactStore";
 import { Pact } from "@/lib/types";
 
@@ -18,13 +19,38 @@ function PactDetailContent() {
   const idParam = searchParams.get("id");
   const [pact, setPact] = useState<Pact | null>(null);
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const id = idParam ? parseInt(idParam) : 1;
-    const p = pactStore.getPactById(id);
-    if (p) {
-      setPact(p);
-    }
+    setLoading(true);
+    const timer = setTimeout(() => {
+      const id = idParam ? parseInt(idParam) : 1;
+      const p = pactStore.getPactById(id);
+      if (p) {
+        setPact(p);
+      }
+      setLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
   }, [idParam]);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", paddingTop: 96, paddingBottom: 60 }}>
+        <div className="container" style={{ maxWidth: 800 }}>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ width: 80, height: 24, borderRadius: 12, background: "rgba(255,255,255,0.05)", marginBottom: 12 }} className="animate-pulse" />
+            <div style={{ width: "60%", height: 32, borderRadius: 8, background: "rgba(255,255,255,0.05)", marginBottom: 8 }} className="animate-pulse" />
+            <div style={{ width: "40%", height: 16, borderRadius: 4, background: "rgba(255,255,255,0.05)" }} className="animate-pulse" />
+          </div>
+          <SkeletonLoader count={1} type="card" />
+          <div style={{ marginTop: 24 }}>
+            <SkeletonLoader count={3} type="row" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!pact) {
     return (
