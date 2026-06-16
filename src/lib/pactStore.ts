@@ -173,6 +173,47 @@ export const pactStore = {
     return newPact;
   },
 
+  saveDraft(id: number | null, title: string, description: string, client: string, provider: string, totalAmount: string, milestones: Omit<Milestone, 'id' | 'state'>[]): Pact {
+    const pacts = this.getPacts();
+    let pact = id ? pacts.find(p => p.id === id) : null;
+    
+    const formattedMilestones: Milestone[] = milestones.map((m, idx) => ({
+      id: idx + 1,
+      title: m.title,
+      description: m.description,
+      amount: m.amount.includes("STX") ? m.amount : `${m.amount} STX`,
+      state: 0 // Pending
+    }));
+
+    if (pact) {
+      pact.title = title;
+      pact.description = description;
+      pact.provider = provider || "SP3F...MOCK";
+      pact.totalAmount = totalAmount.includes("STX") ? totalAmount : `${totalAmount} STX`;
+      pact.milestones = formattedMilestones;
+      pact.state = "draft";
+    } else {
+      const newId = pacts.length > 0 ? Math.max(...pacts.map(p => p.id)) + 1 : 1;
+      pact = {
+        id: newId,
+        title,
+        description,
+        client: client || "SP2J...MOCK",
+        provider: provider || "SP3F...MOCK",
+        totalAmount: totalAmount.includes("STX") ? totalAmount : `${totalAmount} STX`,
+        fundedAmount: "0 STX",
+        releasedAmount: "0 STX",
+        state: "draft",
+        deadline: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
+        createdAt: new Date().toISOString().split('T')[0],
+        milestones: formattedMilestones
+      };
+      pacts.push(pact);
+    }
+    setSafe("pactforge_pacts", pacts);
+    return pact;
+  },
+
   updatePact(updatedPact: Pact): void {
     const pacts = this.getPacts();
     const idx = pacts.findIndex(p => p.id === updatedPact.id);

@@ -1,9 +1,11 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useWallet } from "@/context/WalletContext";
 import { request } from "@stacks/connect";
 import { principalCV, uintCV, stringUtf8CV } from "@stacks/transactions";
 import { pactStore } from "@/lib/pactStore";
+import { useToast } from "@/components/Toaster";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface Milestone {
   title: string;
@@ -11,8 +13,14 @@ interface Milestone {
   amount: string;
 }
 
-export default function CreatePactPage() {
+function CreatePactForm() {
   const { address, connected, connect } = useWallet();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const idParam = searchParams.get("id");
+  const draftId = idParam ? parseInt(idParam) : null;
+  const { toast } = useToast();
+
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -25,7 +33,40 @@ export default function CreatePactPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [txId, setTxId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (draftId) {
+      const p = pactStore.getPactById(draftId);
+      if (p && p.state === "draft") {
+        setTitle(p.title);
+        setDescription(p.description);
+        setProvider(p.provider === "SP3F...MOCK" ? "" : p.provider);
+        setTotalAmount(p.totalAmount.replace(/[^0-9.]/g, ""));
+        if (p.deadline) setDeadline(p.deadline);
+        if (p.milestones.length > 0) {
+          setMilestones(p.milestones.map(m => ({ title: m.title, description: m.description, amount: m.amount.replace(/[^0-9.]/g, "") })));
+        }
+      }
+    }
+  }, [draftId]);
+
+  const handleSaveDraft = () => {
+    try {
+      pactStore.saveDraft(
+        draftId,
+        title || "Untitled Draft",
+        description,
+        address || "SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7",
+        provider,
+        totalAmount,
+        milestones
+      );
+      toast("Draft saved successfully!", "success");
+      router.push("/dashboard");
+    } catch (e) {
+      toast("Failed to save draft.", "error");
+    }
+  };
 
   const addMilestone = () => {
     if (milestones.length < 10) {
@@ -234,9 +275,12 @@ export default function CreatePactPage() {
                   <input className="input-field" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} />
                 </div>
               </div>
-              <button className="btn btn-primary" style={{ alignSelf: "flex-end", padding: "12px 32px" }} onClick={() => { if (validateStep1()) setStep(2); }}>
-                Next: Milestones →
-              </button>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                <button className="btn btn-secondary" onClick={handleSaveDraft}>Save as Draft</button>
+                <button className="btn btn-primary" style={{ padding: "12px 32px" }} onClick={() => { if (validateStep1()) setStep(2); }}>
+                  Next: Milestones →
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -270,7 +314,10 @@ export default function CreatePactPage() {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
               <button className="btn btn-secondary" onClick={() => setStep(1)}>← Back</button>
-              <button className="btn btn-primary" onClick={() => { if (validateStep2()) setStep(3); }}>Review Pact →</button>
+              <div style={{ display: "flex", gap: 12 }}>
+                <button className="btn btn-secondary" onClick={handleSaveDraft}>Save as Draft</button>
+                <button className="btn btn-primary" onClick={() => { if (validateStep2()) setStep(3); }}>Review Pact →</button>
+              </div>
             </div>
           </div>
         )}
@@ -326,5 +373,13 @@ export default function CreatePactPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CreatePactPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", paddingTop: 96, paddingBottom: 60 }}><div className="container" style={{ maxWidth: 720 }}>Loading...</div></div>}>
+      <CreatePactForm />
+    </Suspense>
   );
 }

@@ -9,7 +9,7 @@ export interface Milestone {
   obstacle?: string;
 }
 
-export type PactState = 'created' | 'funded' | 'active' | 'completed' | 'disputed' | 'cancelled';
+export type PactState = 'draft' | 'created' | 'funded' | 'active' | 'completed' | 'disputed' | 'cancelled';
 
 export interface Pact {
   id: number;

@@ -7,6 +7,7 @@ import SkeletonLoader from "@/components/SkeletonLoader";
 import PayoutChart from "@/components/PayoutChart";
 
 const stateColors: Record<string, { bg: string; color: string }> = {
+  draft: { bg: "rgba(100,116,139,0.12)", color: "#64748b" },
   created: { bg: "rgba(148,163,184,0.12)", color: "#94a3b8" },
   funded: { bg: "rgba(245,158,11,0.12)", color: "#f59e0b" },
   active: { bg: "rgba(59,130,246,0.12)", color: "#3b82f6" },
@@ -136,8 +137,8 @@ export default function DashboardPage() {
         {/* Toolbar: Tabs, Search, Sort */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8 }}>
-            {(["all", "active", "completed"] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)}
+            {(["all", "draft", "active", "completed"] as const).map(t => (
+              <button key={t} onClick={() => setTab(t as any)}
                 className={tab === t ? "btn btn-primary" : "btn btn-secondary"}
                 style={{ padding: "8px 20px", fontSize: 13, textTransform: "capitalize" }}>
                 {t === "all" ? "All Pacts" : t}
@@ -196,8 +197,9 @@ export default function DashboardPage() {
             const completed = p.milestones.filter(m => m.state >= 3).length;
             const pct = total > 0 ? (completed / total) * 100 : 0;
             const hasNext = p.milestones.some(m => m.state < 3);
+            const linkHref = p.state === "draft" ? `/create-pact?id=${p.id}` : `/pacts?id=${p.id}`;
             return (
-              <Link key={p.id} href={`/pacts?id=${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+              <Link key={p.id} href={linkHref} style={{ textDecoration: "none", color: "inherit" }}>
                 <div className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", cursor: "pointer", transition: "transform 0.2s" }}
                   onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
                   onMouseLeave={e => e.currentTarget.style.transform = "none"}>
