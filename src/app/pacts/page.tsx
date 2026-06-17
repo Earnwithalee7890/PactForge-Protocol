@@ -104,7 +104,7 @@ function PactDetailContent() {
     const p = { ...pact };
     p.state = "active";
     p.fundedAmount = p.totalAmount;
-    if (p.milestones.length > 0) p.milestones[0].state = 1; // Mark first milestone In Progress
+    if (p.milestones && p.milestones.length > 0) p.milestones[0].state = 1; // Mark first milestone In Progress
     pactStore.updatePact(p);
     setPact(p);
     toast("Pact successfully funded and active!", "success");
@@ -164,10 +164,10 @@ function PactDetailContent() {
         <div className="glass-card" style={{ padding: 28, marginBottom: 24 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 20 }}>
             {[
-              { label: "Total Value", value: pact.totalAmount },
-              { label: "Funded", value: pact.fundedAmount },
-              { label: "Released", value: pact.releasedAmount },
-              { label: "State", value: pact.state },
+              { label: "Total Value", value: pact.totalAmount || "0 STX" },
+              { label: "Funded", value: pact.fundedAmount || "0 STX" },
+              { label: "Released", value: pact.releasedAmount || "0 STX" },
+              { label: "State", value: pact.state || "unknown" },
             ].map((item, i) => (
               <div key={i}>
                 <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4, textTransform: "capitalize" }}>{item.label}</div>
@@ -220,10 +220,10 @@ function PactDetailContent() {
                   border: `1px solid ${st.color}33`,
                 }}>{i + 1}</div>
                 <div style={{ flex: 1, minWidth: 150 }}>
-                  <div style={{ fontWeight: 600, marginBottom: 2 }}>{ms.title}</div>
-                  <div style={{ fontSize: 13, color: "#64748b" }}>{ms.description}</div>
+                  <div style={{ fontWeight: 600, marginBottom: 2 }}>{ms.title || "Untitled"}</div>
+                  <div style={{ fontSize: 13, color: "#64748b" }}>{ms.description || ""}</div>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 14, minWidth: 80, textAlign: "right" }}>{ms.amount}</div>
+                <div style={{ fontWeight: 700, fontSize: 14, minWidth: 80, textAlign: "right" }}>{ms.amount || "0 STX"}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {pact.state === "active" && (
                     <>

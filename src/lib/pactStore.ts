@@ -147,19 +147,19 @@ export const pactStore = {
     
     const formattedMilestones: Milestone[] = milestones.map((m, idx) => ({
       id: idx + 1,
-      title: m.title,
-      description: m.description,
-      amount: m.amount.includes("STX") ? m.amount : `${m.amount} STX`,
+      title: m.title || "Untitled",
+      description: m.description || "",
+      amount: (m.amount || "").includes("STX") ? m.amount : `${m.amount || 0} STX`,
       state: 0 // Pending
     }));
 
     const newPact: Pact = {
       id: newId,
-      title,
-      description,
+      title: title || "Untitled Pact",
+      description: description || "",
       client: client || "SP2J...MOCK",
       provider: provider || "SP3F...MOCK",
-      totalAmount: totalAmount.includes("STX") ? totalAmount : `${totalAmount} STX`,
+      totalAmount: (totalAmount || "").includes("STX") ? totalAmount : `${totalAmount || 0} STX`,
       fundedAmount: "0 STX",
       releasedAmount: "0 STX",
       state: "created",
@@ -177,30 +177,30 @@ export const pactStore = {
     const pacts = this.getPacts();
     let pact = id ? pacts.find(p => p.id === id) : null;
     
-    const formattedMilestones: Milestone[] = milestones.map((m, idx) => ({
+    const formattedMilestones: Milestone[] = (milestones || []).map((m, idx) => ({
       id: idx + 1,
-      title: m.title,
-      description: m.description,
-      amount: m.amount.includes("STX") ? m.amount : `${m.amount} STX`,
+      title: m.title || "",
+      description: m.description || "",
+      amount: (m.amount || "").includes("STX") ? m.amount : `${m.amount || 0} STX`,
       state: 0 // Pending
     }));
 
     if (pact) {
-      pact.title = title;
-      pact.description = description;
+      pact.title = title || "";
+      pact.description = description || "";
       pact.provider = provider || "SP3F...MOCK";
-      pact.totalAmount = totalAmount.includes("STX") ? totalAmount : `${totalAmount} STX`;
+      pact.totalAmount = (totalAmount || "").includes("STX") ? totalAmount : `${totalAmount || 0} STX`;
       pact.milestones = formattedMilestones;
       pact.state = "draft";
     } else {
       const newId = pacts.length > 0 ? Math.max(...pacts.map(p => p.id)) + 1 : 1;
       pact = {
         id: newId,
-        title,
-        description,
+        title: title || "Untitled Draft",
+        description: description || "",
         client: client || "SP2J...MOCK",
         provider: provider || "SP3F...MOCK",
-        totalAmount: totalAmount.includes("STX") ? totalAmount : `${totalAmount} STX`,
+        totalAmount: (totalAmount || "").includes("STX") ? totalAmount : `${totalAmount || 0} STX`,
         fundedAmount: "0 STX",
         releasedAmount: "0 STX",
         state: "draft",
@@ -235,12 +235,12 @@ export const pactStore = {
     // Calculate changes to Pact state/releases
     if (newState === 5) {
       // Milestone paid, add to released amount
-      const amountVal = parseFloat(ms.amount.replace(/[^0-9.]/g, ""));
-      const currentReleased = parseFloat(pact.releasedAmount.replace(/[^0-9.]/g, "")) || 0;
+      const amountVal = parseFloat((ms.amount || "0").replace(/[^0-9.]/g, "")) || 0;
+      const currentReleased = parseFloat((pact.releasedAmount || "0").replace(/[^0-9.]/g, "")) || 0;
       pact.releasedAmount = `${(currentReleased + amountVal).toLocaleString()} STX`;
 
       // If all milestones paid, mark pact as completed
-      const allPaid = pact.milestones.every(m => m.state === 5 || m.state === 3);
+      const allPaid = (pact.milestones || []).every(m => m.state === 5 || m.state === 3);
       if (allPaid) {
         pact.state = "completed";
         this.updateReputation(pact.provider, 5, amountVal);
@@ -378,8 +378,8 @@ export const pactStore = {
         } else {
           // Release remaining to provider
           pact.state = "completed";
-          const totalVal = parseFloat(pact.totalAmount.replace(/[^0-9.]/g, "")) || 0;
-          const releasedVal = parseFloat(pact.releasedAmount.replace(/[^0-9.]/g, "")) || 0;
+          const totalVal = parseFloat((pact.totalAmount || "0").replace(/[^0-9.]/g, "")) || 0;
+          const releasedVal = parseFloat((pact.releasedAmount || "0").replace(/[^0-9.]/g, "")) || 0;
           pact.releasedAmount = pact.totalAmount;
           this.updateReputation(pact.provider, 10, totalVal - releasedVal);
           this.updateReputation(pact.client, -5);
@@ -434,7 +434,7 @@ export const pactStore = {
     }
 
     if (stxEarnedChange > 0) {
-      const currentEarned = parseFloat(rep.totalEarned.replace(/[^0-9.]/g, "")) || 0;
+      const currentEarned = parseFloat((rep.totalEarned || "0").replace(/[^0-9.]/g, "")) || 0;
       rep.totalEarned = `${(currentEarned + stxEarnedChange).toLocaleString()} STX`;
     }
 
