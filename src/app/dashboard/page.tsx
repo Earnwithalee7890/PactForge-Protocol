@@ -85,11 +85,10 @@ export default function DashboardPage() {
       return;
     }
     try {
-      const microAmount = parseFloat((pact.totalAmount || "0").replace(/[^0-9.]/g, "")) * 1_000_000 || 0;
       await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactcore",
         functionName: "fund-pact",
-        functionArgs: [uintCV(pact.id), uintCV(microAmount)],
+        functionArgs: [uintCV(pact.id)],
         postConditionMode: "allow",
         network: "mainnet",
       });
@@ -117,9 +116,9 @@ export default function DashboardPage() {
     if (nextMilestone) {
       try {
         await request("stx_callContract", {
-          contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
+          contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.milestone-v2",
           functionName: "approve-milestone",
-          functionArgs: [uintCV(pact.id), uintCV(nextMilestone.id)],
+          functionArgs: [uintCV(nextMilestone.id)],
           postConditionMode: "allow",
           network: "mainnet",
         });

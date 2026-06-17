@@ -7,7 +7,7 @@ import { pactStore } from "@/lib/pactStore";
 import { Pact } from "@/lib/types";
 import confetti from "canvas-confetti";
 import { request } from "@stacks/connect";
-import { uintCV, stringUtf8CV } from "@stacks/transactions";
+import { uintCV, stringUtf8CV, bufferCV } from "@stacks/transactions";
 import { useWallet } from "@/context/WalletContext";
 
 const msColors: Record<number, { bg: string; color: string; label: string }> = {
@@ -89,15 +89,26 @@ function PactDetailContent() {
     try {
       setIsTxPending(true);
       let functionName = "";
-      if (newState === 1) functionName = "start-milestone";
-      else if (newState === 2) functionName = "submit-milestone";
-      else if (newState === 5) functionName = "approve-milestone";
-      else if (newState === 4) functionName = "reject-milestone";
+      let functionArgs: any[] = [];
+      
+      if (newState === 1) {
+        functionName = "start-milestone";
+        functionArgs = [uintCV(milestoneId)];
+      } else if (newState === 2) {
+        functionName = "submit-milestone";
+        functionArgs = [uintCV(milestoneId), bufferCV(new Uint8Array(32))];
+      } else if (newState === 5) {
+        functionName = "approve-milestone";
+        functionArgs = [uintCV(milestoneId)];
+      } else if (newState === 4) {
+        functionName = "reject-milestone";
+        functionArgs = [uintCV(milestoneId)];
+      }
 
       await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.milestone-v2",
         functionName,
-        functionArgs: [uintCV(pact.id), uintCV(milestoneId)],
+        functionArgs,
         postConditionMode: "allow",
         network: "mainnet",
       });
@@ -139,11 +150,10 @@ function PactDetailContent() {
     }
     try {
       setIsTxPending(true);
-      const microAmount = parseFloat((pact.totalAmount || "0").replace(/[^0-9.]/g, "")) * 1_000_000 || 0;
       await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactcore",
         functionName: "fund-pact",
-        functionArgs: [uintCV(pact.id), uintCV(microAmount)],
+        functionArgs: [uintCV(pact.id)],
         postConditionMode: "allow",
         network: "mainnet",
       });
@@ -172,7 +182,7 @@ function PactDetailContent() {
     try {
       setIsTxPending(true);
       await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactcore",
         functionName: "cancel-pact",
         functionArgs: [uintCV(pact.id)],
         postConditionMode: "allow",
@@ -201,8 +211,8 @@ function PactDetailContent() {
     try {
       setIsTxPending(true);
       await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
-        functionName: "raise-dispute",
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.arbiter-dao-v4",
+        functionName: "create-dispute",
         functionArgs: [uintCV(pact.id), stringUtf8CV(disputeReason)],
         postConditionMode: "allow",
         network: "mainnet",
@@ -225,61 +235,21 @@ function PactDetailContent() {
     }
   };
 
-  const handleReportObstacle = async () => {
+  const handleReportObstacle = () => {
     if (!pact || !obstacleTargetId || !obstacleText.trim()) return;
-    if (!connected) {
-      toast("Please connect your Stacks wallet.", "warning");
-      return;
-    }
-    try {
-      setIsTxPending(true);
-      await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
-        functionName: "flag-obstacle",
-        functionArgs: [uintCV(pact.id), uintCV(obstacleTargetId), stringUtf8CV(obstacleText)],
-        postConditionMode: "allow",
-        network: "mainnet",
-      });
-
-      const updated = pactStore.reportMilestoneObstacle(pact.id, obstacleTargetId, obstacleText);
-      if (updated) setPact({ ...updated });
-      setShowObstacleModal(false);
-      setObstacleTargetId(null);
-      setObstacleText("");
-      toast("Obstacle flag transaction broadcasted.", "warning");
-    } catch (err) {
-      console.error(err);
-      toast("Transaction cancelled or failed.", "error");
-    } finally {
-      setIsTxPending(false);
-    }
+    const updated = pactStore.reportMilestoneObstacle(pact.id, obstacleTargetId, obstacleText);
+    if (updated) setPact({ ...updated });
+    setShowObstacleModal(false);
+    setObstacleTargetId(null);
+    setObstacleText("");
+    toast("Obstacle flagged in UI.", "warning");
   };
 
-  const handleClearObstacle = async (milestoneId: number) => {
+  const handleClearObstacle = (milestoneId: number) => {
     if (!pact) return;
-    if (!connected) {
-      toast("Please connect your Stacks wallet.", "warning");
-      return;
-    }
-    try {
-      setIsTxPending(true);
-      await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
-        functionName: "clear-obstacle",
-        functionArgs: [uintCV(pact.id), uintCV(milestoneId)],
-        postConditionMode: "allow",
-        network: "mainnet",
-      });
-
-      const updated = pactStore.clearMilestoneObstacle(pact.id, milestoneId);
-      if (updated) setPact({ ...updated });
-      toast("Clear block transaction broadcasted.", "success");
-    } catch (err) {
-      console.error(err);
-      toast("Transaction cancelled or failed.", "error");
-    } finally {
-      setIsTxPending(false);
-    }
+    const updated = pactStore.clearMilestoneObstacle(pact.id, milestoneId);
+    if (updated) setPact({ ...updated });
+    toast("Obstacle cleared in UI.", "success");
   };
 
   const completedMs = (pact.milestones || []).filter(m => m.state >= 3).length;
