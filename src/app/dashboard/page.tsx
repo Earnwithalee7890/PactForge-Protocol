@@ -5,6 +5,10 @@ import { pactStore } from "@/lib/pactStore";
 import { Pact } from "@/lib/types";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import PayoutChart from "@/components/PayoutChart";
+import { useToast } from "@/components/Toaster";
+import { request } from "@stacks/connect";
+import { uintCV } from "@stacks/transactions";
+import { useWallet } from "@/context/WalletContext";
 
 const stateColors: Record<string, { bg: string; color: string }> = {
   draft: { bg: "rgba(100,116,139,0.12)", color: "#64748b" },
@@ -22,6 +26,9 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"deadline" | "amount" | "default">("default");
   const [loading, setLoading] = useState(true);
+
+  const { toast } = useToast();
+  const { connected } = useWallet();
 
   useEffect(() => {
     setLoading(true);
@@ -68,27 +75,61 @@ export default function DashboardPage() {
     link.click();
   };
 
-  const handleFundPact = (e: React.MouseEvent, pactId: number) => {
+  const handleFundPact = async (e: React.MouseEvent, pactId: number) => {
     e.preventDefault();
     e.stopPropagation();
     const pact = pactStore.getPactById(pactId);
-    if (pact) {
+    if (!pact) return;
+    if (!connected) {
+      toast("Please connect your Stacks wallet.", "warning");
+      return;
+    }
+    try {
+      const microAmount = parseFloat((pact.totalAmount || "0").replace(/[^0-9.]/g, "")) * 1_000_000 || 0;
+      await request("stx_callContract", {
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
+        functionName: "fund-pact",
+        functionArgs: [uintCV(pact.id), uintCV(microAmount)],
+        postConditionMode: "allow",
+        network: "mainnet",
+      });
+
       pact.state = 'active';
       pact.fundedAmount = pact.totalAmount;
-      // Mark first milestone In Progress
       if (pact.milestones && pact.milestones.length > 0) pact.milestones[0].state = 1;
       pactStore.updatePact(pact);
       setPacts(pactStore.getPacts());
+      toast("Transaction broadcasted! Pact funded.", "success");
+    } catch (err) {
+      console.error(err);
+      toast("Transaction cancelled or failed.", "error");
     }
   };
 
-  const handleCompleteNext = (e: React.MouseEvent, pact: Pact) => {
+  const handleCompleteNext = async (e: React.MouseEvent, pact: Pact) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!connected) {
+      toast("Please connect your Stacks wallet.", "warning");
+      return;
+    }
     const nextMilestone = (pact.milestones || []).find(m => m.state < 3);
     if (nextMilestone) {
-      pactStore.updateMilestoneState(pact.id, nextMilestone.id, 5);
-      setPacts(pactStore.getPacts());
+      try {
+        await request("stx_callContract", {
+          contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactforge-core",
+          functionName: "approve-milestone",
+          functionArgs: [uintCV(pact.id), uintCV(nextMilestone.id)],
+          postConditionMode: "allow",
+          network: "mainnet",
+        });
+        pactStore.updateMilestoneState(pact.id, nextMilestone.id, 5);
+        setPacts(pactStore.getPacts());
+        toast("Transaction broadcasted! Simulated locally.", "success");
+      } catch (err) {
+        console.error(err);
+        toast("Transaction cancelled or failed.", "error");
+      }
     }
   };
 
