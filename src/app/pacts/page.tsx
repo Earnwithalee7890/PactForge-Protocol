@@ -24,6 +24,14 @@ function PactDetailContent() {
 
   const [loading, setLoading] = useState(true);
 
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputeTitle, setDisputeTitle] = useState("");
+  const [disputeReason, setDisputeReason] = useState("");
+
+  const [showObstacleModal, setShowObstacleModal] = useState(false);
+  const [obstacleTargetId, setObstacleTargetId] = useState<number | null>(null);
+  const [obstacleText, setObstacleText] = useState("");
+
   useEffect(() => {
     setLoading(true);
     const timer = setTimeout(() => {
@@ -65,14 +73,6 @@ function PactDetailContent() {
       </div>
     );
   }
-
-  const [showDisputeModal, setShowDisputeModal] = useState(false);
-  const [disputeTitle, setDisputeTitle] = useState("");
-  const [disputeReason, setDisputeReason] = useState("");
-
-  const [showObstacleModal, setShowObstacleModal] = useState(false);
-  const [obstacleTargetId, setObstacleTargetId] = useState<number | null>(null);
-  const [obstacleText, setObstacleText] = useState("");
 
   const handleMilestoneAction = (milestoneId: number, newState: any) => {
     const updated = pactStore.updateMilestoneState(pact.id, milestoneId, newState);
