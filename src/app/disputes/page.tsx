@@ -2,6 +2,10 @@
 import { useState, useEffect } from "react";
 import { pactStore } from "@/lib/pactStore";
 import { Dispute } from "@/lib/types";
+import { request } from "@stacks/connect";
+import { uintCV } from "@stacks/transactions";
+import { useWallet } from "@/context/WalletContext";
+import { useToast } from "@/components/Toaster";
 
 const stateStyle: Record<string, { bg: string; color: string; label: string }> = {
   open: { bg: "rgba(245,158,11,0.12)", color: "#f59e0b", label: "Open" },
@@ -10,19 +14,60 @@ const stateStyle: Record<string, { bg: string; color: string; label: string }> =
 };
 
 export default function DisputesPage() {
+  const { connected, address } = useWallet();
+  const { toast } = useToast();
   const [isArbiter, setIsArbiter] = useState(false);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     setDisputes(pactStore.getDisputes());
   }, []);
 
-  const handleVote = (disputeId: number, voteFor: "client" | "provider") => {
-    // Simulate voter address SP_ARBITER_...
-    const voter = `SP_ARBITER_${Math.floor(Math.random() * 1000)}`;
-    const updated = pactStore.voteDispute(disputeId, voteFor, voter);
-    if (updated) {
-      setDisputes(pactStore.getDisputes());
+  const handleRegisterArbiter = async () => {
+    if (!connected) return toast("Please connect your Stacks wallet.", "warning");
+    try {
+      setIsPending(true);
+      await request("stx_callContract", {
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.arbiter-dao-v4",
+        functionName: "register-arbiter",
+        functionArgs: [],
+        postConditionMode: "allow",
+        network: "mainnet",
+      });
+      setIsArbiter(true);
+      toast("Registered as Arbiter! 1 STX staked.", "success");
+    } catch (err) {
+      console.error(err);
+      toast("Transaction failed or cancelled.", "error");
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleVote = async (disputeId: number, voteFor: "client" | "provider") => {
+    if (!connected) return toast("Please connect your Stacks wallet.", "warning");
+    try {
+      setIsPending(true);
+      await request("stx_callContract", {
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.arbiter-dao-v4",
+        functionName: "vote-dispute",
+        functionArgs: [uintCV(disputeId), { type: voteFor === "client" ? 3 : 4 } as any],
+        postConditionMode: "allow",
+        network: "mainnet",
+      });
+      
+      const voter = address || `SP_ARBITER_${Math.floor(Math.random() * 1000)}`;
+      const updated = pactStore.voteDispute(disputeId, voteFor, voter);
+      if (updated) {
+        setDisputes(pactStore.getDisputes());
+      }
+      toast("Vote successfully cast on-chain!", "success");
+    } catch (err) {
+      console.error(err);
+      toast("Transaction failed or cancelled.", "error");
+    } finally {
+      setIsPending(false);
     }
   };
 
@@ -35,8 +80,8 @@ export default function DisputesPage() {
             <p style={{ color: "#94a3b8", marginTop: 6 }}>Decentralized arbitration powered by community arbiters.</p>
           </div>
           {!isArbiter && (
-            <button className="btn btn-primary" onClick={() => setIsArbiter(true)}>
-              ⚖️ Become an Arbiter
+            <button className="btn btn-primary" onClick={handleRegisterArbiter} disabled={isPending}>
+              {isPending ? "Waiting for Wallet..." : "⚖️ Become an Arbiter (1 STX)"}
             </button>
           )}
         </div>
