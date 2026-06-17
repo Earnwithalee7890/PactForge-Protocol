@@ -147,8 +147,8 @@ function PactDetailContent() {
     toast("Obstacle cleared.", "success");
   };
 
-  const completedMs = pact.milestones.filter(m => m.state >= 3).length;
-  const progress = pact.milestones.length > 0 ? (completedMs / pact.milestones.length) * 100 : 0;
+  const completedMs = (pact.milestones || []).filter(m => m.state >= 3).length;
+  const progress = pact.milestones?.length > 0 ? (completedMs / pact.milestones.length) * 100 : 0;
 
   return (
     <div style={{ minHeight: "100vh", paddingTop: 96, paddingBottom: 60 }}>
@@ -179,7 +179,7 @@ function PactDetailContent() {
           <div style={{ marginTop: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b", marginBottom: 6 }}>
               <span>Progress</span>
-              <span>{completedMs}/{pact.milestones.length} milestones</span>
+              <span>{completedMs}/{pact.milestones?.length || 0} milestones</span>
             </div>
             <div style={{ width: "100%", height: 8, borderRadius: 4, background: "rgba(255,255,255,0.06)" }}>
               <div style={{ width: `${progress}%`, height: "100%", borderRadius: 4,
@@ -199,7 +199,7 @@ function PactDetailContent() {
               <div>
                 <div style={{ fontSize: 12, color: "#64748b" }}>{p.label}</div>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#f1f5f9" }}>
-                  {p.addr.length > 15 ? `${p.addr.slice(0, 8)}...${p.addr.slice(-6)}` : p.addr}
+                  {p.addr && p.addr.length > 15 ? `${p.addr.slice(0, 8)}...${p.addr.slice(-6)}` : p.addr || "Not Set"}
                 </div>
               </div>
             </div>
@@ -209,7 +209,7 @@ function PactDetailContent() {
         {/* Milestones Timeline */}
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Milestones</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
-          {pact.milestones.map((ms, i) => {
+          {(pact.milestones || []).map((ms, i) => {
             const st = msColors[ms.state] || { bg: "rgba(255,255,255,0.05)", color: "#fff", label: "Unknown" };
             return (
               <div key={ms.id} className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>

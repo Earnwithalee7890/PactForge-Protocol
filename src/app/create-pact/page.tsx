@@ -38,13 +38,13 @@ function CreatePactForm() {
     if (draftId) {
       const p = pactStore.getPactById(draftId);
       if (p && p.state === "draft") {
-        setTitle(p.title);
-        setDescription(p.description);
-        setProvider(p.provider === "SP3F...MOCK" ? "" : p.provider);
-        setTotalAmount(p.totalAmount.replace(/[^0-9.]/g, ""));
+        setTitle(p.title || "");
+        setDescription(p.description || "");
+        setProvider(p.provider === "SP3F...MOCK" ? "" : p.provider || "");
+        setTotalAmount((p.totalAmount || "").replace(/[^0-9.]/g, ""));
         if (p.deadline) setDeadline(p.deadline);
-        if (p.milestones.length > 0) {
-          setMilestones(p.milestones.map(m => ({ title: m.title, description: m.description, amount: m.amount.replace(/[^0-9.]/g, "") })));
+        if (p.milestones && p.milestones.length > 0) {
+          setMilestones(p.milestones.map(m => ({ title: m.title || "", description: m.description || "", amount: (m.amount || "").replace(/[^0-9.]/g, "") })));
         }
       }
     }

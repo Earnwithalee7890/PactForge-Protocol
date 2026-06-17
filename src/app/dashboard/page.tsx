@@ -36,13 +36,13 @@ export default function DashboardPage() {
     if (tab !== "all" && p.state !== tab) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      if (!p.title.toLowerCase().includes(q) && !p.provider.toLowerCase().includes(q)) return false;
+      if (!(p.title || "").toLowerCase().includes(q) && !(p.provider || "").toLowerCase().includes(q)) return false;
     }
     return true;
   }).sort((a, b) => {
     if (sortBy === "amount") {
-      const amountA = parseInt(a.totalAmount.replace(/[^0-9]/g, '')) || 0;
-      const amountB = parseInt(b.totalAmount.replace(/[^0-9]/g, '')) || 0;
+      const amountA = parseInt((a.totalAmount || "").replace(/[^0-9]/g, '')) || 0;
+      const amountB = parseInt((b.totalAmount || "").replace(/[^0-9]/g, '')) || 0;
       return amountB - amountA;
     }
     if (sortBy === "deadline") {
@@ -56,9 +56,9 @@ export default function DashboardPage() {
     const csvContent = [
       headers.join(","),
       ...filtered.map(p => {
-        const total = p.milestones.length;
-        const completed = p.milestones.filter(m => m.state >= 3).length;
-        return `${p.id},"${p.title}","${p.provider}","${p.totalAmount}",${total},${completed},${p.state},"${p.deadline}"`;
+        const total = p.milestones?.length || 0;
+        const completed = (p.milestones || []).filter(m => m.state >= 3).length;
+        return `${p.id},"${p.title || ""}","${p.provider || ""}","${p.totalAmount || ""}",${total},${completed},${p.state},"${p.deadline || ""}"`;
       })
     ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -76,7 +76,7 @@ export default function DashboardPage() {
       pact.state = 'active';
       pact.fundedAmount = pact.totalAmount;
       // Mark first milestone In Progress
-      if (pact.milestones.length > 0) pact.milestones[0].state = 1;
+      if (pact.milestones && pact.milestones.length > 0) pact.milestones[0].state = 1;
       pactStore.updatePact(pact);
       setPacts(pactStore.getPacts());
     }
@@ -85,7 +85,7 @@ export default function DashboardPage() {
   const handleCompleteNext = (e: React.MouseEvent, pact: Pact) => {
     e.preventDefault();
     e.stopPropagation();
-    const nextMilestone = pact.milestones.find(m => m.state < 3);
+    const nextMilestone = (pact.milestones || []).find(m => m.state < 3);
     if (nextMilestone) {
       pactStore.updateMilestoneState(pact.id, nextMilestone.id, 5);
       setPacts(pactStore.getPacts());
@@ -193,10 +193,10 @@ export default function DashboardPage() {
               No pacts found matching your criteria.
             </div>
           ) : filtered.map(p => {
-            const total = p.milestones.length;
-            const completed = p.milestones.filter(m => m.state >= 3).length;
+            const total = p.milestones?.length || 0;
+            const completed = (p.milestones || []).filter(m => m.state >= 3).length;
             const pct = total > 0 ? (completed / total) * 100 : 0;
-            const hasNext = p.milestones.some(m => m.state < 3);
+            const hasNext = (p.milestones || []).some(m => m.state < 3);
             const linkHref = p.state === "draft" ? `/create-pact?id=${p.id}` : `/pacts?id=${p.id}`;
             return (
               <Link key={p.id} href={linkHref} style={{ textDecoration: "none", color: "inherit" }}>
@@ -204,11 +204,11 @@ export default function DashboardPage() {
                   onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
                   onMouseLeave={e => e.currentTarget.style.transform = "none"}>
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{p.title}</div>
-                    <div style={{ fontSize: 13, color: "#64748b", fontFamily: "var(--font-mono)" }}>Provider: {p.provider}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{p.title || "Untitled"}</div>
+                    <div style={{ fontSize: 13, color: "#64748b", fontFamily: "var(--font-mono)" }}>Provider: {p.provider || "Not Set"}</div>
                   </div>
                   <div style={{ textAlign: "center", minWidth: 100 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.totalAmount}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.totalAmount || "0 STX"}</div>
                     <div style={{ fontSize: 12, color: "#64748b" }}>Value</div>
                   </div>
                   <div style={{ textAlign: "center", minWidth: 100 }}>
