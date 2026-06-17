@@ -33,6 +33,9 @@ function CreatePactForm() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const [publishedCount, setPublishedCount] = useState(0);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
     if (draftId) {
@@ -360,11 +363,61 @@ function CreatePactForm() {
           <div className="glass-card" style={{ padding: 40, textAlign: "center", border: "1px solid rgba(34,197,94,0.3)", background: "linear-gradient(135deg, rgba(34,197,94,0.06), rgba(99,102,241,0.02))" }}>
             <div style={{ fontSize: 48, marginBottom: 20 }}>🚀</div>
             <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: "#22c55e" }}>Escrow Transaction Initiated!</h2>
-            <p style={{ color: "#94a3b8", fontSize: 15, marginBottom: 28, maxWidth: 500, margin: "0 auto 28px", lineHeight: 1.6 }}>
-              Your trustless agreement has been submitted to the Stacks Blockchain. Connect and verify the milestones once the block completes!
+            <p style={{ color: "#94a3b8", fontSize: 15, marginBottom: 28, maxWidth: 500, margin: "0 auto", lineHeight: 1.6 }}>
+              Your trustless agreement has been submitted to the Stacks Blockchain in `pactcore`.
             </p>
+            
+            <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 12, padding: 24, margin: "0 auto 28px", maxWidth: 400, textAlign: "left" }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Next Step: Publish Milestones</h3>
+              <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 16 }}>
+                You must publish your {milestones.length} milestones to the `milestone-v2` contract so the provider can begin work.
+                (Note: Your wallet will prompt you {milestones.length} times).
+              </p>
+              
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <span style={{ fontSize: 14, fontWeight: 600 }}>{publishedCount} / {milestones.length} Published</span>
+                <div style={{ width: 100, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3 }}>
+                  <div style={{ width: `${(publishedCount / milestones.length) * 100}%`, height: "100%", background: "#22c55e", borderRadius: 3, transition: "width 0.3s" }} />
+                </div>
+              </div>
+
+              <button 
+                className="btn btn-primary" 
+                style={{ width: "100%", padding: "12px 0" }}
+                disabled={isPublishing || publishedCount === milestones.length}
+                onClick={async () => {
+                  if (!connected) return toast("Please connect wallet", "warning");
+                  setIsPublishing(true);
+                  try {
+                    // Let's assume the ID of the created pact is the latest length (mock)
+                    const mockPactId = pactStore.getPacts().length; 
+                    for (let i = publishedCount; i < milestones.length; i++) {
+                      const m = milestones[i];
+                      const microAmt = parseFloat(m.amount) * 1_000_000 || 0;
+                      await request("stx_callContract", {
+                        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.milestone-v2",
+                        functionName: "add-milestone",
+                        functionArgs: [uintCV(mockPactId), stringUtf8CV(m.title), stringUtf8CV(m.description), uintCV(microAmt)],
+                        postConditionMode: "allow",
+                        network: "mainnet",
+                      });
+                      setPublishedCount(prev => prev + 1);
+                    }
+                    toast("All milestones successfully published!", "success");
+                  } catch (err) {
+                    console.error(err);
+                    toast("Publishing interrupted or failed.", "error");
+                  } finally {
+                    setIsPublishing(false);
+                  }
+                }}
+              >
+                {publishedCount === milestones.length ? "✅ Milestones Published" : isPublishing ? "Publishing..." : "Publish Milestones to Chain"}
+              </button>
+            </div>
+
             <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-              <button className="btn btn-primary" onClick={() => setStep(1)}>Create Another Pact</button>
+              <button className="btn btn-primary" onClick={() => { setStep(1); setPublishedCount(0); }}>Create Another Pact</button>
               <a href="https://explorer.hiro.so/?chain=mainnet" target="_blank" rel="noopener noreferrer" className="btn btn-secondary">
                 View Stacks Explorer
               </a>

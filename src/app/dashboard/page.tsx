@@ -122,9 +122,9 @@ export default function DashboardPage() {
           postConditionMode: "allow",
           network: "mainnet",
         });
-        pactStore.updateMilestoneState(pact.id, nextMilestone.id, 5);
+        pactStore.updateMilestoneState(pact.id, nextMilestone.id, 3);
         setPacts(pactStore.getPacts());
-        toast("Transaction broadcasted! Simulated locally.", "success");
+        toast("Milestone approved! Release funds in details view.", "success");
       } catch (err) {
         console.error(err);
         toast("Transaction cancelled or failed.", "error");

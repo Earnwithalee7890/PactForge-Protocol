@@ -97,7 +97,7 @@ function PactDetailContent() {
       } else if (newState === 2) {
         functionName = "submit-milestone";
         functionArgs = [uintCV(milestoneId), bufferCV(new Uint8Array(32))];
-      } else if (newState === 5) {
+      } else if (newState === 3) {
         functionName = "approve-milestone";
         functionArgs = [uintCV(milestoneId)];
       } else if (newState === 4) {
@@ -105,13 +105,26 @@ function PactDetailContent() {
         functionArgs = [uintCV(milestoneId)];
       }
 
-      await request("stx_callContract", {
-        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.milestone-v2",
-        functionName,
-        functionArgs,
-        postConditionMode: "allow",
-        network: "mainnet",
-      });
+      if (newState === 5) {
+        // Release funds from pactcore
+        const msAmount = parseFloat((pact.milestones.find(m => m.id === milestoneId)?.amount || "0").replace(/[^0-9.]/g, "")) * 1_000_000 || 0;
+        await request("stx_callContract", {
+          contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactcore",
+          functionName: "release-payment",
+          functionArgs: [uintCV(pact.id), uintCV(msAmount)],
+          postConditionMode: "allow",
+          network: "mainnet",
+        });
+      } else {
+        // Normal milestone update
+        await request("stx_callContract", {
+          contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.milestone-v2",
+          functionName,
+          functionArgs,
+          postConditionMode: "allow",
+          network: "mainnet",
+        });
+      }
 
       // Optimistically update local UI mock state after tx broadcast
       const updated = pactStore.updateMilestoneState(pact.id, milestoneId, newState);
@@ -227,6 +240,32 @@ function PactDetailContent() {
         setDisputeReason("");
         toast("Dispute transaction broadcasted to DAO arbiters.", "warning");
       }
+    } catch (err) {
+      console.error(err);
+      toast("Transaction cancelled or failed.", "error");
+    } finally {
+      setIsTxPending(false);
+    }
+  };
+
+  const handleVote = async (voteForClient: boolean) => {
+    if (!pact) return;
+    if (!connected) {
+      toast("Please connect your Stacks wallet.", "warning");
+      return;
+    }
+    try {
+      setIsTxPending(true);
+      const boolCV = (val: boolean) => ({ type: val ? 3 : 4 } as any); // True: 3, False: 4
+      await request("stx_callContract", {
+        contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.arbiter-dao-v4",
+        functionName: "vote-dispute",
+        // Fallback to true/false boolean CV format from stacks transactions
+        functionArgs: [uintCV(pact.id), { type: voteForClient ? 3 : 4 } as any],
+        postConditionMode: "allow",
+        network: "mainnet",
+      });
+      toast("Vote broadcasted to Arbiter DAO.", "success");
     } catch (err) {
       console.error(err);
       toast("Transaction cancelled or failed.", "error");
@@ -357,13 +396,18 @@ function PactDetailContent() {
                       )}
                       {ms.state === 2 && (
                         <>
-                          <button onClick={() => handleMilestoneAction(ms.id, 5)} className="btn btn-success" style={{ padding: "6px 12px", fontSize: 11 }}>
+                          <button onClick={() => handleMilestoneAction(ms.id, 3)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: 11 }}>
                             ✅ Approve
                           </button>
                           <button onClick={() => handleMilestoneAction(ms.id, 4)} className="btn btn-danger" style={{ padding: "6px 12px", fontSize: 11 }}>
                             ❌ Reject
                           </button>
                         </>
+                      )}
+                      {ms.state === 3 && (
+                        <button onClick={() => handleMilestoneAction(ms.id, 5)} className="btn btn-success shimmer-btn" style={{ padding: "6px 12px", fontSize: 11 }}>
+                          💸 Release Funds
+                        </button>
                       )}
                     </>
                   )}
@@ -408,8 +452,18 @@ function PactDetailContent() {
             </div>
           )}
           {pact.state === "disputed" && (
-            <div className="badge badge-danger" style={{ fontSize: 14, padding: "10px 20px" }}>
-              🚨 Under Arbitration
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="badge badge-danger" style={{ fontSize: 14, padding: "10px 20px", alignSelf: "flex-start" }}>
+                🚨 Under Arbitration
+              </div>
+              <div className="glass-card" style={{ padding: 24, border: "1px solid rgba(239,68,68,0.3)" }}>
+                <h3 style={{ color: "#ef4444", marginBottom: 12 }}>⚖️ Arbitration Panel</h3>
+                <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 16 }}>Staked Arbiters can vote on-chain to resolve this dispute.</p>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button onClick={() => handleVote(true)} className="btn btn-secondary" style={{ borderColor: "#6366f1", color: "#6366f1" }}>Vote for Client</button>
+                  <button onClick={() => handleVote(false)} className="btn btn-secondary" style={{ borderColor: "#f59e0b", color: "#f59e0b" }}>Vote for Provider</button>
+                </div>
+              </div>
             </div>
           )}
           {pact.state === "cancelled" && (
