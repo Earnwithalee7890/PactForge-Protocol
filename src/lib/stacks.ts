@@ -72,3 +72,48 @@ export function shortenAddress(address: string, chars = 4): string {
   if (!address) return "";
   return `${address.slice(0, chars + 2)}...${address.slice(-chars)}`;
 }
+
+// Parse Clarity error codes to human-readable text
+export function parseClarityError(error: any): string {
+  if (!error) return "Unknown transaction error.";
+  
+  const errorMessage = typeof error === "string" ? error : (error.message || "");
+  
+  // Try to find code like u100 or 100 in message
+  const match = errorMessage.match(/u(\d+)/i) || errorMessage.match(/err-code\s*(\d+)/i) || errorMessage.match(/code\s*(\d+)/i);
+  if (match) {
+    const code = parseInt(match[1]);
+    switch (code) {
+      case 100:
+      case 1001:
+        return "Unauthorized action. You are not a party to this agreement.";
+      case 101:
+      case 1002:
+        return "Insufficient balance to perform payment or funding.";
+      case 102:
+      case 1003:
+        return "Invalid state: action cannot be completed in current state.";
+      case 103:
+      case 1004:
+        return "Pact has expired or deadline has passed.";
+      case 104:
+      case 1005:
+        return "Milestone payment is already completed or disputed.";
+      case 105:
+      case 1006:
+        return "You have already voted or participated in this vote.";
+      case 106:
+      case 1007:
+        return "Pact value must exceed zero.";
+      default:
+        return `Blockchain transaction failed with Clarity error code: u${code}.`;
+    }
+  }
+
+  if (errorMessage.includes("UserRejected")) {
+    return "Transaction request rejected in Stacks wallet.";
+  }
+
+  return errorMessage || "An unexpected blockchain transaction error occurred.";
+}
+
