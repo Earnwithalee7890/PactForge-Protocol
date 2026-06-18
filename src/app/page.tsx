@@ -205,22 +205,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer style={{
-        padding: "40px 24px", borderTop: "1px solid rgba(255,255,255,0.06)",
-        textAlign: "center", color: "#64748b", fontSize: 13,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 }}>
-          <Image src="/logo.png" alt="PactForge" width={24} height={24} style={{ borderRadius: 6 }} />
-          <span style={{ fontWeight: 700, color: "#f1f5f9" }}>Pact<span style={{ color: "#f97316" }}>Forge</span></span>
-          <span>•</span>
-          <span>Built on Stacks</span>
-          <span>•</span>
-          <span>Bitcoin L2</span>
-        </div>
-        <p>© 2026 PactForge Protocol. All rights reserved.</p>
-      </footer>
     </div>
   );
 }

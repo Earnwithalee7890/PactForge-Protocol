@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Providers } from "./providers";
 import MascotHelper from "@/components/MascotHelper";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -33,7 +34,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ToastProvider>
             <Providers>
               <Navbar />
-              <main>{children}</main>
+              <main style={{ minHeight: "calc(100vh - 180px)" }}>{children}</main>
+              <Footer />
               <MascotHelper />
             </Providers>
           </ToastProvider>
