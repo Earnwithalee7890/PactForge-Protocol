@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useWallet } from "@/context/WalletContext";
 import { useTheme } from "@/context/ThemeContext";
 import { shortenAddress } from "@/lib/stacks";
@@ -15,6 +16,7 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { address, connected, connecting, connect, disconnect } = useWallet();
@@ -59,16 +61,32 @@ export default function Navbar() {
       <div style={{
         display: "flex", alignItems: "center", gap: 8,
       }} className="desktop-nav">
-        {NAV_LINKS.map((link) => (
-          <Link key={link.href} href={link.href} style={{
-            padding: "8px 16px", borderRadius: 8,
-            fontSize: 14, fontWeight: 500, color: "#94a3b8",
-            transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.color = "#f1f5f9"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = "#94a3b8"; e.currentTarget.style.background = "transparent"; }}
-          >{link.label}</Link>
-        ))}
+        {NAV_LINKS.map((link) => {
+          const isActive = pathname === link.href;
+          return (
+            <Link key={link.href} href={link.href} style={{
+              padding: "8px 16px", borderRadius: 8,
+              fontSize: 14, fontWeight: 500,
+              color: isActive ? "#f1f5f9" : "#94a3b8",
+              background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
+              transition: "all 0.2s ease",
+              border: isActive ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.color = "#f1f5f9";
+                e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) {
+                e.currentTarget.style.color = "#94a3b8";
+                e.currentTarget.style.background = "transparent";
+              }
+            }}
+            >{link.label}</Link>
+          );
+        })}
 
         <button onClick={toggleTheme} style={{
           background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer",
@@ -123,13 +141,17 @@ export default function Navbar() {
           background: "rgba(10,11,15,0.98)", backdropFilter: "blur(20px)",
           display: "flex", flexDirection: "column", padding: 24, gap: 8, zIndex: 999,
         }}>
-          {NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
-              style={{ padding: "16px 20px", borderRadius: 12, fontSize: 16, fontWeight: 500,
-                color: "#f1f5f9", background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
-              }}>{link.label}</Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)}
+                style={{ padding: "16px 20px", borderRadius: 12, fontSize: 16, fontWeight: 500,
+                  color: isActive ? "#f97316" : "#f1f5f9",
+                  background: isActive ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.03)",
+                  border: isActive ? "1px solid rgba(249,115,22,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                }}>{link.label}</Link>
+            );
+          })}
           {connected ? (
             <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{
