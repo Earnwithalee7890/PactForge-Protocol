@@ -1,5 +1,14 @@
 export type MilestoneState = 0 | 1 | 2 | 3 | 4 | 5;
 
+export enum MilestoneStatus {
+  DRAFT = 0,
+  PENDING = 1,
+  ACTIVE = 2,
+  SUBMITTED = 3,
+  APPROVED = 4,
+  FAILED = 5
+}
+
 export interface Milestone {
   id: number;
   title: string;
@@ -45,3 +54,13 @@ export interface ReputationProfile {
   disputedPacts: number;
   totalEarned: string; // e.g. "12,400 STX"
 }
+
+export type PactForgeNetwork = 'mainnet' | 'testnet' | 'mock';
+
+export interface ArbiterProfile {
+  address: string;
+  isRegistered: boolean;
+  resolvedDisputes: number;
+  reputationScore: number;
+}
+
