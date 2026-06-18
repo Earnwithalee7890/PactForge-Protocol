@@ -257,25 +257,25 @@ function CreatePactForm() {
             <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>Pact Details</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               <div className="input-group">
-                <label className="input-label">Pact Title</label>
-                <input className="input-field" placeholder="e.g. DeFi Dashboard Development" value={title} onChange={e => setTitle(e.target.value)} />
+                <label htmlFor="pact-title" className="input-label">Pact Title</label>
+                <input id="pact-title" className="input-field" placeholder="e.g. DeFi Dashboard Development" value={title} onChange={e => setTitle(e.target.value)} aria-label="Pact Title" required />
               </div>
               <div className="input-group">
-                <label className="input-label">Description</label>
-                <textarea className="input-field" placeholder="Describe the work to be done..." value={description} onChange={e => setDescription(e.target.value)} />
+                <label htmlFor="pact-desc" className="input-label">Description</label>
+                <textarea id="pact-desc" className="input-field" placeholder="Describe the work to be done..." value={description} onChange={e => setDescription(e.target.value)} aria-label="Pact Description" required />
               </div>
               <div className="input-group">
-                <label className="input-label">Provider Address (STX)</label>
-                <input className="input-field" placeholder="SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7" value={provider} onChange={e => setProvider(e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: 13 }} />
+                <label htmlFor="pact-provider" className="input-label">Provider Address (STX)</label>
+                <input id="pact-provider" className="input-field" placeholder="SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7" value={provider} onChange={e => setProvider(e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: 13 }} aria-label="Provider Address (STX)" required />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div className="input-group">
-                  <label className="input-label">Total Amount (STX)</label>
-                  <input className="input-field" type="number" placeholder="5000" value={totalAmount} onChange={e => setTotalAmount(e.target.value)} />
+                  <label htmlFor="pact-amount" className="input-label">Total Amount (STX)</label>
+                  <input id="pact-amount" className="input-field" type="number" placeholder="5000" value={totalAmount} onChange={e => setTotalAmount(e.target.value)} aria-label="Total Amount (STX)" required />
                 </div>
                 <div className="input-group">
-                  <label className="input-label">Deadline</label>
-                  <input className="input-field" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} />
+                  <label htmlFor="pact-deadline" className="input-label">Deadline</label>
+                  <input id="pact-deadline" className="input-field" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} aria-label="Deadline Date" required />
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
@@ -304,13 +304,13 @@ function CreatePactForm() {
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "#6366f1" }}>Milestone {i + 1}</span>
                     {milestones.length > 1 && (
-                      <button onClick={() => removeMilestone(i)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 13 }}>Remove</button>
+                      <button onClick={() => removeMilestone(i)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 13 }} aria-label={`Remove Milestone ${i + 1}`}>Remove</button>
                     )}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    <input className="input-field" placeholder="Milestone title" value={ms.title} onChange={e => updateMilestone(i, "title", e.target.value)} />
-                    <textarea className="input-field" placeholder="What will be delivered?" value={ms.description} onChange={e => updateMilestone(i, "description", e.target.value)} style={{ minHeight: 60 }} />
-                    <input className="input-field" type="number" placeholder="Payment amount (STX)" value={ms.amount} onChange={e => updateMilestone(i, "amount", e.target.value)} />
+                    <input className="input-field" placeholder="Milestone title" value={ms.title} onChange={e => updateMilestone(i, "title", e.target.value)} aria-label={`Milestone ${i + 1} Title`} />
+                    <textarea className="input-field" placeholder="What will be delivered?" value={ms.description} onChange={e => updateMilestone(i, "description", e.target.value)} style={{ minHeight: 60 }} aria-label={`Milestone ${i + 1} Description`} />
+                    <input className="input-field" type="number" placeholder="Payment amount (STX)" value={ms.amount} onChange={e => updateMilestone(i, "amount", e.target.value)} aria-label={`Milestone ${i + 1} Amount`} />
                   </div>
                 </div>
               ))}
