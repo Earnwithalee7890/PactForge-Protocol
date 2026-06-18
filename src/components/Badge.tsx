@@ -15,7 +15,7 @@ export default function Badge({
 }: BadgeProps) {
   // Map pulse animation based on variant
   const pulseClass = pulse 
-    ? (variant === "success" ? "pulse-green" : variant === "warning" ? "pulse-yellow" : "")
+    ? (variant === "success" ? "pulse-green" : variant === "warning" ? "pulse-yellow" : variant === "danger" ? "pulse-red" : "pulse-blue")
     : "";
 
   return (

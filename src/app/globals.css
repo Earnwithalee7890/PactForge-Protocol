@@ -328,6 +328,22 @@ textarea.input-field { resize: vertical; min-height: 100px; }
   animation: pulse-warn 2.5s infinite ease-in-out;
 }
 
+@keyframes pulse-danger {
+  0%, 100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.45); border-color: rgba(239, 68, 68, 0.6); }
+}
+.pulse-red {
+  animation: pulse-danger 2.5s infinite ease-in-out;
+}
+
+@keyframes pulse-info {
+  0%, 100% { box-shadow: 0 0 8px rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(59, 130, 246, 0.45); border-color: rgba(59, 130, 246, 0.6); }
+}
+.pulse-blue {
+  animation: pulse-info 2.5s infinite ease-in-out;
+}
+
 .float-hover {
   transition: transform 0.3s ease;
 }
