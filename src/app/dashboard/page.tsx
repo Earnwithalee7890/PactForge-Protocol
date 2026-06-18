@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { pactStore } from "@/lib/pactStore";
 import { Pact } from "@/lib/types";
@@ -22,7 +22,7 @@ const stateColors: Record<string, { bg: string; color: string }> = {
 
 export default function DashboardPage() {
   const [pacts, setPacts] = useState<Pact[]>([]);
-  const [tab, setTab] = useState<"all" | "active" | "completed">("all");
+  const [tab, setTab] = useState<"all" | "active" | "completed" | "draft">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"deadline" | "amount" | "default">("default");
   const [loading, setLoading] = useState(true);
@@ -39,24 +39,50 @@ export default function DashboardPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const filtered = pacts.filter(p => {
-    if (tab !== "all" && p.state !== tab) return false;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      if (!(p.title || "").toLowerCase().includes(q) && !(p.provider || "").toLowerCase().includes(q)) return false;
-    }
-    return true;
-  }).sort((a, b) => {
-    if (sortBy === "amount") {
-      const amountA = parseInt((a.totalAmount || "").replace(/[^0-9]/g, '')) || 0;
-      const amountB = parseInt((b.totalAmount || "").replace(/[^0-9]/g, '')) || 0;
-      return amountB - amountA;
-    }
-    if (sortBy === "deadline") {
-      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-    }
-    return 0;
-  });
+  const filtered = useMemo(() => {
+    return pacts.filter(p => {
+      if (tab !== "all" && p.state !== tab) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        if (!(p.title || "").toLowerCase().includes(q) && !(p.provider || "").toLowerCase().includes(q)) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      if (sortBy === "amount") {
+        const amountA = parseInt((a.totalAmount || "").replace(/[^0-9]/g, '')) || 0;
+        const amountB = parseInt((b.totalAmount || "").replace(/[^0-9]/g, '')) || 0;
+        return amountB - amountA;
+      }
+      if (sortBy === "deadline") {
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      }
+      return 0;
+    });
+  }, [pacts, tab, searchQuery, sortBy]);
+
+  const dashboardStats = useMemo(() => {
+    const activeCount = pacts.filter(p => p.state === "active").length;
+    // Calculate total earned from completed pacts
+    const totalEarnedSTX = pacts
+      .filter(p => p.state === "completed")
+      .reduce((sum, p) => {
+        const amount = parseInt((p.totalAmount || "").replace(/[^0-9]/g, '')) || 0;
+        return sum + amount;
+      }, 0);
+    const earnedVal = totalEarnedSTX > 0 ? `${totalEarnedSTX.toLocaleString()} STX` : "0 STX";
+
+    // completion rate calculation
+    const completedCount = pacts.filter(p => p.state === "completed").length;
+    const closedCount = pacts.filter(p => p.state === "completed" || p.state === "cancelled").length;
+    const rate = closedCount > 0 ? `${Math.round((completedCount / closedCount) * 100)}%` : "100%";
+
+    return [
+      { label: "Active Pacts", value: activeCount.toString(), icon: "📋" },
+      { label: "Total Earned", value: earnedVal, icon: "💰" },
+      { label: "Reputation Score", value: "95", icon: "⭐" },
+      { label: "Completion Rate", value: rate, icon: "✅" },
+    ];
+  }, [pacts]);
 
   const exportCSV = () => {
     const headers = ["ID", "Title", "Provider", "Amount", "Milestones", "Completed", "State", "Deadline"];
@@ -150,12 +176,7 @@ export default function DashboardPage() {
           <div style={{ marginBottom: 40 }}><SkeletonLoader count={4} type="stat" /></div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 40 }}>
-            {[
-              { label: "Active Pacts", value: pacts.filter(p => p.state === "active").length.toString(), icon: "📋" },
-              { label: "Total Earned", value: "12,400 STX", icon: "💰" },
-              { label: "Reputation Score", value: "87", icon: "⭐" },
-              { label: "Completion Rate", value: "96%", icon: "✅" },
-            ].map((s, i) => (
+            {dashboardStats.map((s, i) => (
               <div key={i} className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16 }}>
                 <div style={{
                   width: 48, height: 48, borderRadius: 12, fontSize: 22,
