@@ -341,7 +341,7 @@ function PactDetailContent() {
         </div>
 
         {/* Participants */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+        <div className="responsive-grid" style={{ marginBottom: 24 }}>
           {[
             { label: "Client", addr: pact.client, icon: "👤" },
             { label: "Provider", addr: pact.provider, icon: "🛠️" },

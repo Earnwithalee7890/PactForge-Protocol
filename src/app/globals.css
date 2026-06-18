@@ -305,6 +305,12 @@ textarea.input-field { resize: vertical; min-height: 100px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
 /* ===== Responsive ===== */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
 @media (max-width: 768px) {
   .container { padding: 0 16px; }
   .stat-value { font-size: 22px; }
