@@ -4,6 +4,7 @@ import { useWallet } from "@/context/WalletContext";
 import LottieAnimation from "@/components/LottieAnimation";
 import { pactStore } from "@/lib/pactStore";
 import { ReputationProfile } from "@/lib/types";
+import { useToast } from "@/components/Toaster";
 
 const TIERS = [
   { 
@@ -60,17 +61,54 @@ export default function ReputationPage() {
     initializeReputation, 
     mintPFG,
     pfgBalance,
-    connect
+    connect,
+    recordPactCompletedOnChain,
+    recordMilestoneDeliveredOnChain
   } = useWallet();
 
   const [mintAmount, setMintAmount] = useState<string>("1000");
   const [recipient, setRecipient] = useState<string>("");
   const [minting, setMinting] = useState<boolean>(false);
   const [initializing, setInitializing] = useState<boolean>(false);
+  const [txPending, setTxPending] = useState<boolean>(false);
   
   const [localReputation, setLocalReputation] = useState<ReputationProfile | null>(null);
   const [leaderboard, setLeaderboard] = useState<Array<{ rank: number, address: string, score: number, tier: string }>>([]);
   const [activities, setActivities] = useState<Array<{ date: string; title: string; desc: string; type: string }>>([]);
+
+  const { toast } = useToast();
+
+  const handleRecordPactCompleted = async () => {
+    if (!address) return;
+    setTxPending(true);
+    try {
+      await recordPactCompletedOnChain(address);
+      pactStore.updateReputation(address, 10);
+      setLocalReputation(pactStore.getReputation(address));
+      toast("Pact completion recorded on-chain!", "success");
+    } catch (e) {
+      console.error(e);
+      toast("Transaction cancelled or failed.", "error");
+    } finally {
+      setTxPending(false);
+    }
+  };
+
+  const handleRecordMilestoneDelivered = async () => {
+    if (!address) return;
+    setTxPending(true);
+    try {
+      await recordMilestoneDeliveredOnChain(address);
+      pactStore.updateReputation(address, 5);
+      setLocalReputation(pactStore.getReputation(address));
+      toast("Milestone delivery recorded on-chain!", "success");
+    } catch (e) {
+      console.error(e);
+      toast("Transaction cancelled or failed.", "error");
+    } finally {
+      setTxPending(false);
+    }
+  };
 
   useEffect(() => {
     if (address) {
@@ -221,14 +259,64 @@ export default function ReputationPage() {
                 </div>
               </div>
 
-              {/* SBT Info */}
-              <div className="glass-card" style={{ padding: 24, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>🛡️ Soul-Bound Security</h3>
-                <p style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>
-                  PactForge reputation profiles use non-transferable Soul-Bound Tokens. Your performance history is permanently linked to your principal address, preventing identity buying and guaranteeing trust.
-                </p>
-                <div style={{ fontSize: 12, color: "#64748b", fontFamily: "var(--font-mono)" }}>
-                  Joined at Block Height: #{(812000 + Math.floor(Math.random() * 1000))}
+              {/* SBT Info & Transactions */}
+              <div className="glass-card" style={{ padding: 24, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>🛡️ On-Chain SBT Transactions</h3>
+                  <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+                    Interact directly with the mainnet Reputation SBT contract to record achievements and update your on-chain score.
+                  </p>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.02)", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.04)" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>1. Register SBT Profile</div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>Create your soul-bound identity profile</div>
+                      </div>
+                      <button 
+                        className="btn btn-secondary" 
+                        onClick={handleInitialize} 
+                        disabled={initializing || !!localReputation} 
+                        style={{ padding: "6px 12px", fontSize: 11 }}
+                      >
+                        {localReputation ? "Initialized ✅" : initializing ? "Sending..." : "Register"}
+                      </button>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.02)", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.04)" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>2. Record Pact Completion</div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>Add +10 pts for completing contract works</div>
+                      </div>
+                      <button 
+                        className="btn btn-primary" 
+                        onClick={handleRecordPactCompleted} 
+                        disabled={!localReputation || txPending} 
+                        style={{ padding: "6px 12px", fontSize: 11 }}
+                      >
+                        {txPending ? "Broadcasting..." : "⚡ Execute"}
+                      </button>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.02)", padding: "10px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.04)" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>3. Record Milestone Delivery</div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>Add +5 pts for individual milestones</div>
+                      </div>
+                      <button 
+                        className="btn btn-primary" 
+                        onClick={handleRecordMilestoneDelivered} 
+                        disabled={!localReputation || txPending} 
+                        style={{ padding: "6px 12px", fontSize: 11 }}
+                      >
+                        {txPending ? "Broadcasting..." : "⚡ Execute"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 11, color: "#64748b", fontFamily: "var(--font-mono)", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 10 }}>
+                  Contract: SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.reputation-sbt-v2
                 </div>
               </div>
             </div>

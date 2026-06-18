@@ -29,6 +29,8 @@ interface WalletContextType {
   initializeReputation: () => Promise<void>;
   mintPFG: (amount: number, recipient: string) => Promise<void>;
   refreshOnChainData: () => Promise<void>;
+  recordPactCompletedOnChain: (userAddress: string) => Promise<void>;
+  recordMilestoneDeliveredOnChain: (userAddress: string) => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType>({
@@ -43,6 +45,8 @@ const WalletContext = createContext<WalletContextType>({
   initializeReputation: async () => {},
   mintPFG: async () => {},
   refreshOnChainData: async () => {},
+  recordPactCompletedOnChain: async () => {},
+  recordMilestoneDeliveredOnChain: async () => {},
 });
 
 export function useWallet() {
@@ -187,6 +191,32 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [address, refreshOnChainData]);
 
+  // Record Pact Completion on Reputation Contract (Mainnet Tx)
+  const recordPactCompletedOnChain = useCallback(async (userAddress: string) => {
+    if (!address) return;
+    await request("stx_callContract", {
+      contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.reputation-sbt-v2",
+      functionName: "record-pact-completed",
+      functionArgs: [principalCV(userAddress)],
+      postConditionMode: "allow",
+      network: "mainnet",
+    });
+    setTimeout(() => refreshOnChainData(), 5000);
+  }, [address, refreshOnChainData]);
+
+  // Record Milestone Delivery on Reputation Contract (Mainnet Tx)
+  const recordMilestoneDeliveredOnChain = useCallback(async (userAddress: string) => {
+    if (!address) return;
+    await request("stx_callContract", {
+      contract: "SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.reputation-sbt-v2",
+      functionName: "record-milestone-delivered",
+      functionArgs: [principalCV(userAddress)],
+      postConditionMode: "allow",
+      network: "mainnet",
+    });
+    setTimeout(() => refreshOnChainData(), 5000);
+  }, [address, refreshOnChainData]);
+
   return (
     <WalletContext.Provider value={{
       address,
@@ -200,6 +230,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       initializeReputation,
       mintPFG,
       refreshOnChainData,
+      recordPactCompletedOnChain,
+      recordMilestoneDeliveredOnChain,
     }}>
       {children}
     </WalletContext.Provider>
