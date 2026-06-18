@@ -245,6 +245,42 @@ PactForge-Protocol/
 
 ---
 
+## 📦 PactForge SDK
+
+PactForge provides a strongly-typed TypeScript SDK to make integrating with our Clarity smart contracts effortless. It abstracts away the complexity of handling `ClarityValues` and network configuration.
+
+### Installation
+
+```bash
+npm install github:Earnwithalee7890/PactForge-Sdk
+```
+
+### Usage
+
+```typescript
+import { PactForgeClient } from 'pactforge-sdk';
+
+// Initialize the client (defaults to Mainnet)
+const pactforge = new PactForgeClient();
+
+// Read contract data
+const stats = await pactforge.pacts.getProtocolStats("SP_YOUR_ADDRESS...");
+
+// Generate transaction options for @stacks/connect
+const txOptions = pactforge.pacts.createPactOptions(
+  "SP_PROVIDER_ADDRESS",
+  1000000n,
+  "Title",
+  "Description",
+  150000n, // deadline
+  3n       // milestones
+);
+```
+
+For full documentation, visit the [SDK Repository](https://github.com/Earnwithalee7890/PactForge-Sdk).
+
+---
+
 ## 🔧 Tech Stack
 
 | Layer | Technology |
