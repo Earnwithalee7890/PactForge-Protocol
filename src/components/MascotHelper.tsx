@@ -24,7 +24,7 @@ export default function MascotHelper() {
       setMessage("Hi! I'm Forge. Let me know if you need help navigating the protocol.");
     }
 
-    // Auto-pop the helper on route change for 5 seconds if not explicitly closed recently
+    // Auto-pop the helper on route change for 6 seconds if not explicitly closed recently
     setOpen(true);
     const timer = setTimeout(() => setOpen(false), 6000);
     return () => clearTimeout(timer);
@@ -39,34 +39,68 @@ export default function MascotHelper() {
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-end",
-      pointerEvents: "none" // allow clicking through empty space
+      pointerEvents: "none"
     }}>
       {/* Tooltip Dialog */}
       <div style={{
-        background: "rgba(30, 41, 59, 0.95)",
-        backdropFilter: "blur(10px)",
-        border: "1px solid rgba(99, 102, 241, 0.3)",
+        background: "var(--bg-card)",
+        backdropFilter: "blur(20px)",
+        border: "1px solid var(--border-glass)",
         borderRadius: "16px 16px 0px 16px",
-        padding: "16px 20px",
-        width: 260,
+        padding: "18px 20px",
+        width: 280,
         marginBottom: 16,
-        boxShadow: "0 10px 40px rgba(0,0,0,0.3), 0 0 20px rgba(99, 102, 241, 0.15)",
-        transform: open ? "scale(1) translateY(0)" : "scale(0.8) translateY(20px)",
+        boxShadow: "0 10px 40px rgba(0,0,0,0.4), var(--glow-primary)",
+        transform: open ? "scale(1) translateY(0)" : "scale(0.85) translateY(20px)",
         opacity: open ? 1 : 0,
-        transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         pointerEvents: open ? "auto" : "none",
-        transformOrigin: "bottom right"
+        transformOrigin: "bottom right",
+        position: "relative"
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: "#818cf8" }}>Forge Helper</span>
+        {/* Tooltip Arrow */}
+        <div style={{
+          position: "absolute",
+          bottom: -7,
+          right: 24,
+          width: 14,
+          height: 14,
+          background: "var(--bg-card)",
+          borderBottom: "1px solid var(--border-glass)",
+          borderRight: "1px solid var(--border-glass)",
+          transform: "rotate(45deg)",
+          zIndex: 1
+        }} />
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14 }}>🤖</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-primary)", letterSpacing: "0.05em", textTransform: "uppercase" }}>Forge Helper</span>
+          </div>
           <button 
             onClick={() => setOpen(false)}
-            style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: 16 }}
+            style={{ 
+              background: "rgba(255,255,255,0.04)", 
+              border: "1px solid rgba(255,255,255,0.08)", 
+              color: "var(--text-muted)", 
+              cursor: "pointer", 
+              fontSize: 10,
+              width: 20,
+              height: 20,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.15)"; e.currentTarget.style.color = "#ef4444"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "var(--text-muted)"; }}
           >
-            ×
+            ✕
           </button>
         </div>
-        <p style={{ fontSize: 13, color: "#e2e8f0", lineHeight: 1.5, margin: 0 }}>
+        
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, margin: 0 }}>
           {message}
         </p>
       </div>
@@ -74,26 +108,24 @@ export default function MascotHelper() {
       {/* Floating Mascot Button */}
       <div 
         onClick={() => setOpen(!open)}
-        className="pulse-primary"
+        className="pulse-blue float-hover"
         style={{
           width: 64,
           height: 64,
           borderRadius: "50%",
-          background: "linear-gradient(135deg, #4f46e5, #6366f1)",
-          boxShadow: "0 8px 24px rgba(99, 102, 241, 0.4)",
+          background: "var(--accent-gradient)",
+          boxShadow: "0 8px 30px rgba(99, 102, 241, 0.35)",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           cursor: "pointer",
           pointerEvents: "auto",
-          transition: "transform 0.2s ease",
-          border: "2px solid rgba(255,255,255,0.1)",
+          transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+          border: "1px solid rgba(255,255,255,0.15)",
           transform: open ? "scale(0.9)" : "scale(1)"
         }}
-        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
-        onMouseLeave={(e) => e.currentTarget.style.transform = open ? "scale(0.9)" : "scale(1)"}
       >
-        <LottieAnimation src="https://assets10.lottiefiles.com/packages/lf20_myejio2g.json" style={{ width: 44, height: 44 }} />
+        <LottieAnimation src="https://assets10.lottiefiles.com/packages/lf20_myejio2g.json" style={{ width: 46, height: 46 }} />
       </div>
     </div>
   );
