@@ -49,3 +49,19 @@ We follow the **Conventional Commits** specification:
   ```bash
   npm run build
   ```
+
+## 🎨 Coding & Design Standards
+
+### 1. Styling & Theme System
+* **CSS Custom Properties**: Always use variables defined in `src/app/globals.css` (e.g. `--bg-glass`, `--border-glass`, `--accent-gradient`, `--font-sans`).
+* **Glassmorphism**: When creating a card or container, apply the `.glass-card` class to inherit the backdrop-filter, border styles, and hover transitions.
+* **Animations**: Utilize pre-defined animations (`animate-in`, `shimmer-btn`, `float-hover`) instead of defining ad-hoc keyframes where possible.
+
+### 2. State & Store Integrity
+* **pactStore**: Avoid writing direct localStorage keys. Always use the helper methods (`pactStore.getPacts()`, `pactStore.createPact()`) which enforce prefix namespacing and structural integrity verification.
+* **optimistic UI updates**: When invoking blockchain transactions with `@stacks/connect`, update the local store state immediately (or optimistically) to keep the UI responsive, but track transaction receipts when appropriate.
+
+### 3. Component Guidelines
+* **Centralization**: Use common shared components (`Button`, `Badge`, `EmptyState`) to prevent duplicate styling.
+* **Accessibility**: Always supply `htmlFor`, `id`, and explicit `aria-label` labels for forms and interactive elements to comply with accessibility practices.
+
