@@ -107,19 +107,30 @@ const INITIAL_REPUTATION: Record<string, ReputationProfile> = {
   }
 };
 
+const STORAGE_PREFIX = "pactforge_v2_";
+
 function isClient(): boolean {
   return typeof window !== "undefined";
 }
 
 function getSafe<T>(key: string, defaultValue: T): T {
   if (!isClient()) return defaultValue;
-  const item = localStorage.getItem(key);
+  const prefixedKey = STORAGE_PREFIX + key;
+  const item = localStorage.getItem(prefixedKey);
   if (!item) {
-    localStorage.setItem(key, JSON.stringify(defaultValue));
+    localStorage.setItem(prefixedKey, JSON.stringify(defaultValue));
     return defaultValue;
   }
   try {
-    return JSON.parse(item);
+    const parsed = JSON.parse(item);
+    // basic structural integrity check
+    if (Array.isArray(defaultValue) && !Array.isArray(parsed)) {
+      return defaultValue;
+    }
+    if (defaultValue && typeof defaultValue === "object" && (!parsed || typeof parsed !== "object")) {
+      return defaultValue;
+    }
+    return parsed;
   } catch {
     return defaultValue;
   }
@@ -127,7 +138,7 @@ function getSafe<T>(key: string, defaultValue: T): T {
 
 function setSafe<T>(key: string, value: T): void {
   if (isClient()) {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
   }
 }
 
