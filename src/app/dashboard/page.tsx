@@ -156,6 +156,8 @@ export default function DashboardPage() {
         toast("Transaction cancelled or failed.", "error");
       }
     }
+  };
+
   const handleResetStore = () => {
     if (confirm("Are you sure you want to reset all mock pacts and reputation stats? This will restore clean mock database states.")) {
       pactStore.clearAll();
