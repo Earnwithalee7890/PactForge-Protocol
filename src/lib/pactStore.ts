@@ -110,7 +110,7 @@ const INITIAL_REPUTATION: Record<string, ReputationProfile> = {
 const STORAGE_PREFIX = "pactforge_v2_";
 
 function isClient(): boolean {
-  return typeof window !== "undefined";
+  return typeof window !== "undefined" || typeof localStorage !== "undefined";
 }
 
 function getSafe<T>(key: string, defaultValue: T): T {

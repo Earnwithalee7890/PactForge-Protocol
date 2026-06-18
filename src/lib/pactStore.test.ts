@@ -1,13 +1,19 @@
 // Mock localStorage for node environment testing
-if (typeof global !== 'undefined' && !('localStorage' in global)) {
+if (typeof global !== 'undefined') {
   const store: Record<string, string> = {};
-  (global as any).localStorage = {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { for (const key in store) delete store[key]; }
-  };
+  Object.defineProperty(global, 'localStorage', {
+    value: {
+      getItem: (key: string) => store[key] || null,
+      setItem: (key: string, value: string) => { store[key] = value; },
+      removeItem: (key: string) => { delete store[key]; },
+      clear: () => { for (const key in store) delete store[key]; }
+    },
+    configurable: true,
+    enumerable: true,
+    writable: true
+  });
 }
+
 
 import { pactStore } from "./pactStore";
 
@@ -74,7 +80,14 @@ function runTests() {
   const refundedPact = pactStore.getPactById(1);
   assert(refundedPact?.state === "cancelled", "Resolved dispute in favor of client should cancel the pact");
 
+  // 6. Test clearAll reset capability
+  pactStore.clearAll();
+  const clearedPacts = pactStore.getPacts();
+  // Since cleared, it should re-initialize with default mock pacts (which has 4 items)
+  assert(clearedPacts.length === 4, "Store should reset and reinitialize with 4 items after clearAll");
+
   console.log("All unit tests passed successfully!");
 }
 
 runTests();
+
