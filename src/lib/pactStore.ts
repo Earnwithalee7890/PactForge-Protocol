@@ -451,5 +451,13 @@ export const pactStore = {
 
     repMap[address] = rep;
     setSafe("pactforge_reputation", repMap);
+  },
+
+  clearAll(): void {
+    if (isClient()) {
+      localStorage.removeItem(STORAGE_PREFIX + "pactforge_pacts");
+      localStorage.removeItem(STORAGE_PREFIX + "pactforge_disputes");
+      localStorage.removeItem(STORAGE_PREFIX + "pactforge_reputation");
+    }
   }
 };

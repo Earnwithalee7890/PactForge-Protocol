@@ -156,6 +156,12 @@ export default function DashboardPage() {
         toast("Transaction cancelled or failed.", "error");
       }
     }
+  const handleResetStore = () => {
+    if (confirm("Are you sure you want to reset all mock pacts and reputation stats? This will restore clean mock database states.")) {
+      pactStore.clearAll();
+      setPacts(pactStore.getPacts());
+      toast("Mock application state reset successfully!", "success");
+    }
   };
 
   return (
@@ -166,9 +172,14 @@ export default function DashboardPage() {
             <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.02em" }}>Dashboard</h1>
             <p style={{ color: "#94a3b8", marginTop: 6 }}>Manage your pacts, track milestones, and monitor earnings.</p>
           </div>
-          <button onClick={exportCSV} className="btn btn-secondary" style={{ padding: "8px 20px", fontSize: 13 }}>
-            Export CSV
-          </button>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button onClick={handleResetStore} className="btn btn-danger" style={{ padding: "8px 20px", fontSize: 13, background: "rgba(239, 68, 68, 0.12)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+              🔄 Reset State
+            </button>
+            <button onClick={exportCSV} className="btn btn-secondary" style={{ padding: "8px 20px", fontSize: 13 }}>
+              Export CSV
+            </button>
+          </div>
         </div>
 
         {/* Stats Row */}
