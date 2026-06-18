@@ -63,7 +63,8 @@ export default function ReputationPage() {
     pfgBalance,
     connect,
     recordPactCompletedOnChain,
-    recordMilestoneDeliveredOnChain
+    recordMilestoneDeliveredOnChain,
+    reputation
   } = useWallet();
 
   const [mintAmount, setMintAmount] = useState<string>("1000");
@@ -133,7 +134,7 @@ export default function ReputationPage() {
     setLeaderboard(generatedLeaderboard);
   }, [address]);
 
-  const score = localReputation?.score || 0;
+  const score = reputation ? reputation.score : (localReputation?.score || 0);
   const { current: currentTier, next: nextTier, progress } = getTierInfo(score);
 
   const handleInitialize = async () => {
@@ -143,6 +144,10 @@ export default function ReputationPage() {
       if (address) {
         setLocalReputation(pactStore.getReputation(address));
       }
+      toast("Profile initialization transaction broadcasted! It may take a minute to confirm on-chain.", "success");
+    } catch (e) {
+      console.error(e);
+      toast("Initialization transaction cancelled or failed.", "error");
     } finally {
       setInitializing(false);
     }
@@ -181,7 +186,7 @@ export default function ReputationPage() {
             <div style={{ fontSize: 32, marginBottom: 16 }} className="animate-pulse">🔄</div>
             <p style={{ color: "#94a3b8" }}>Loading live profile details...</p>
           </div>
-        ) : !localReputation ? (
+        ) : !reputation ? (
           <div className="glass-card" style={{ padding: 40, textAlign: "center", marginBottom: 32,
             background: "linear-gradient(135deg, rgba(245,158,11,0.06), rgba(139,92,246,0.02))", border: "1px solid rgba(245,158,11,0.2)" }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>
@@ -240,15 +245,17 @@ export default function ReputationPage() {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32 }}>
-              {/* Simulated Metrics */}
+              {/* Profile Metrics */}
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Simulated Profile Metrics</h2>
+                <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
+                  {reputation ? "On-Chain Profile Metrics" : "Simulated Profile Metrics"}
+                </h2>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   {[
-                    { label: "Pacts Completed", value: localReputation.completedPacts, icon: "📋" },
-                    { label: "Disputed Pacts", value: localReputation.disputedPacts, icon: "❌" },
-                    { label: "Total Earned", value: localReputation.totalEarned, icon: "💰" },
-                    { label: "Profile Score", value: localReputation.score, icon: "⭐" },
+                    { label: "Pacts Completed", value: reputation ? reputation.pactsCompleted : (localReputation?.completedPacts || 0), icon: "📋" },
+                    { label: "Milestones Delivered", value: reputation ? reputation.milestonesDelivered : 0, icon: "✨" },
+                    { label: "Disputes Lost", value: reputation ? reputation.disputesLost : (localReputation?.disputedPacts || 0), icon: "❌" },
+                    { label: "Profile Score", value: reputation ? reputation.score : (localReputation?.score || 0), icon: "⭐" },
                   ].map((s, i) => (
                     <div key={i} className="glass-card" style={{ padding: 20, textAlign: "center" }}>
                       <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
@@ -276,10 +283,10 @@ export default function ReputationPage() {
                       <button 
                         className="btn btn-secondary" 
                         onClick={handleInitialize} 
-                        disabled={initializing || !!localReputation} 
+                        disabled={initializing || reputation !== null} 
                         style={{ padding: "6px 12px", fontSize: 11 }}
                       >
-                        {localReputation ? "Initialized ✅" : initializing ? "Sending..." : "Register"}
+                        {reputation !== null ? "Initialized ✅" : initializing ? "Sending..." : "Register"}
                       </button>
                     </div>
 
@@ -291,7 +298,7 @@ export default function ReputationPage() {
                       <button 
                         className="btn btn-primary" 
                         onClick={handleRecordPactCompleted} 
-                        disabled={!localReputation || txPending} 
+                        disabled={reputation === null || txPending} 
                         style={{ padding: "6px 12px", fontSize: 11 }}
                       >
                         {txPending ? "Broadcasting..." : "⚡ Execute"}
@@ -306,7 +313,7 @@ export default function ReputationPage() {
                       <button 
                         className="btn btn-primary" 
                         onClick={handleRecordMilestoneDelivered} 
-                        disabled={!localReputation || txPending} 
+                        disabled={reputation === null || txPending} 
                         style={{ padding: "6px 12px", fontSize: 11 }}
                       >
                         {txPending ? "Broadcasting..." : "⚡ Execute"}

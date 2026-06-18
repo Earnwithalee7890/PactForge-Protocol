@@ -170,6 +170,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setTimeout(() => refreshOnChainData(), 5000);
     } catch (err) {
       console.error("Initialization failed:", err);
+      throw err;
     }
   }, [address, refreshOnChainData]);
 
