@@ -19,10 +19,44 @@ export default function DisputesPage() {
   const [isArbiter, setIsArbiter] = useState(false);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [isPending, setIsPending] = useState(false);
+  const [evidenceList, setEvidenceList] = useState<Record<number, Array<{ sender: string; text: string; date: string }>>>({});
+  const [evidenceInput, setEvidenceInput] = useState<Record<number, string>>({});
 
   useEffect(() => {
     setDisputes(pactStore.getDisputes());
+    const saved = localStorage.getItem("pactforge_v2_dispute_evidence");
+    if (saved) {
+      try {
+        setEvidenceList(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }, []);
+
+  const handleAddEvidence = (disputeId: number) => {
+    const text = evidenceInput[disputeId];
+    if (!text || !text.trim()) return;
+
+    const newEvidence = {
+      sender: address || "SP_ANON",
+      text: text.trim(),
+      date: new Date().toISOString()
+    };
+
+    const updated = {
+      ...evidenceList,
+      [disputeId]: [...(evidenceList[disputeId] || []), newEvidence]
+    };
+
+    setEvidenceList(updated);
+    localStorage.setItem("pactforge_v2_dispute_evidence", JSON.stringify(updated));
+    setEvidenceInput({
+      ...evidenceInput,
+      [disputeId]: ""
+    });
+    toast("Evidence submitted to DAO details timeline!", "success");
+  };
 
   const handleRegisterArbiter = async () => {
     if (!connected) return toast("Please connect your Stacks wallet.", "warning");
@@ -134,6 +168,56 @@ export default function DisputesPage() {
                   <div style={{ fontSize: 13, color: "#94a3b8", fontWeight: 600, marginBottom: 4 }}>Issue: {d.title}</div>
                   <div style={{ fontSize: 13, color: "#94a3b8", fontStyle: "italic" }}>"{d.reason}"</div>
                 </div>
+
+                {/* Evidence Timeline */}
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "var(--text-secondary)" }}>DAO Evidence Timeline</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 150, overflowY: "auto", paddingRight: 4 }}>
+                    {(!evidenceList[d.id] || evidenceList[d.id].length === 0) ? (
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>No evidence submitted yet.</div>
+                    ) : (
+                      evidenceList[d.id].map((ev, idx) => (
+                        <div key={idx} style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.03)", padding: 10, borderRadius: 8 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>
+                            <span style={{ fontFamily: "var(--font-mono)" }}>
+                              {ev.sender === address ? "You" : `${ev.sender.slice(0, 6)}...${ev.sender.slice(-4)}`}
+                            </span>
+                            <span>{new Date(ev.date).toLocaleDateString()} {new Date(ev.date).toLocaleTimeString()}</span>
+                          </div>
+                          <div style={{ fontSize: 13, color: "var(--text-primary)" }}>{ev.text}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Evidence Form */}
+                {connected && d.status === "open" && (
+                  <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                    <input
+                      type="text"
+                      placeholder="Submit comment, argument, or IPFS link..."
+                      value={evidenceInput[d.id] || ""}
+                      onChange={(e) => setEvidenceInput({ ...evidenceInput, [d.id]: e.target.value })}
+                      style={{
+                        flex: 1,
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 8,
+                        padding: "8px 12px",
+                        color: "var(--text-primary)",
+                        fontSize: 12,
+                        outline: "none"
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleAddEvidence(d.id);
+                      }}
+                    />
+                    <button onClick={() => handleAddEvidence(d.id)} className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: 12 }}>
+                      Submit
+                    </button>
+                  </div>
+                )}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ display: "flex", gap: 16 }}>
                     <div style={{ fontSize: 13 }}>
