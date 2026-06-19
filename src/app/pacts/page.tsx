@@ -300,6 +300,102 @@ function PactDetailContent() {
     toast("Obstacle cleared in UI.", "success");
   };
 
+  const handlePrintInvoice = () => {
+    if (!pact) return;
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast("Popup blocked! Please allow popups to export report.", "error");
+      return;
+    }
+    
+    const milestonesHTML = (pact.milestones || []).map((m, idx) => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd;">${idx + 1}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+          <strong>${m.title}</strong><br>
+          <small style="color: #666;">${m.description}</small>
+        </td>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">${m.amount}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">
+          ${m.state === 5 ? "Paid" : m.state === 3 ? "Approved" : m.state === 2 ? "Submitted" : m.state === 1 ? "In Progress" : "Pending"}
+        </td>
+      </tr>
+    `).join("");
+
+    const htmlContent = `
+      <html>
+        <head>
+          <title>PactForge Escrow Report - Pact #${pact.id}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 40px; color: #333; line-height: 1.5; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: bold; color: #0f172a; }
+            .logo span { color: #f97316; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+            .info-box { background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { background: #f1f5f9; padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e1; }
+            .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo">Pact<span>Forge</span> Escrow Report</div>
+            <div style="text-align: right;">
+              <strong>Pact ID:</strong> #${pact.id}<br>
+              <strong>Date:</strong> ${new Date().toLocaleDateString()}
+            </div>
+          </div>
+          <div class="info-grid">
+            <div class="info-box">
+              <strong>Agreement Details:</strong><br>
+              <span style="font-size: 18px; font-weight: bold; color: #6366f1;">${pact.title}</span><br>
+              <p style="margin-top: 6px; font-size: 13px; color: #475569;">${pact.description}</p>
+            </div>
+            <div class="info-box">
+              <strong>Escrow Participants:</strong><br>
+              <small><strong>Client Address:</strong> ${pact.client}</small><br>
+              <small><strong>Provider Address:</strong> ${pact.provider}</small><br>
+              <small><strong>Escrow State:</strong> ${pact.state.toUpperCase()}</small>
+            </div>
+          </div>
+          <div class="info-box" style="margin-bottom: 30px; background: #e0e7ff; border-color: #c7d2fe;">
+            <div style="display: flex; justify-content: space-between;">
+              <span><strong>Total Escrow Value:</strong></span>
+              <span style="font-size: 20px; font-weight: bold; color: #4f46e5;">${pact.totalAmount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 13px;">
+              <span>Released Payments:</span>
+              <span>${pact.releasedAmount}</span>
+            </div>
+          </div>
+          <h3>Milestone Schedule</h3>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Deliverable Description</th>
+                <th style="text-align: right; width: 120px;">Amount</th>
+                <th style="text-align: center; width: 100px;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${milestonesHTML}
+            </tbody>
+          </table>
+          <div class="footer">
+            PactForge Escrow Protocol • Trustless Agreement Signed On Stacks Mainnet
+          </div>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   const completedMs = (pact.milestones || []).filter(m => m.state >= 3).length;
   const progress = pact.milestones?.length > 0 ? (completedMs / pact.milestones.length) * 100 : 0;
 
@@ -322,12 +418,17 @@ function PactDetailContent() {
             <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>{pact.title}</h1>
             <p style={{ color: "#94a3b8", fontSize: 14 }}>{pact.description}</p>
           </div>
-          {isTxPending && (
-            <div className="badge" style={{ background: "rgba(245,158,11,0.2)", color: "#fcd34d", display: "flex", alignItems: "center", gap: 8, padding: "8px 16px" }}>
-              <div style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid #fcd34d", borderTopColor: "transparent", animation: "spin 1s linear infinite" }} />
-              Pending TX...
-            </div>
-          )}
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <button onClick={handlePrintInvoice} className="btn btn-secondary" style={{ padding: "8px 16px", fontSize: 12 }}>
+              🖨️ Export PDF
+            </button>
+            {isTxPending && (
+              <div className="badge" style={{ background: "rgba(245,158,11,0.2)", color: "#fcd34d", display: "flex", alignItems: "center", gap: 8, padding: "8px 16px" }}>
+                <div style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid #fcd34d", borderTopColor: "transparent", animation: "spin 1s linear infinite" }} />
+                Pending TX...
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Info Grid */}
