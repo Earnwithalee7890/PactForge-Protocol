@@ -4,9 +4,10 @@ import { Pact } from "@/lib/types";
 
 interface StatsBreakdownProps {
   pacts: Pact[];
+  currency?: "STX" | "USD" | "EUR";
 }
 
-export default function StatsBreakdown({ pacts }: StatsBreakdownProps) {
+export default function StatsBreakdown({ pacts, currency = "STX" }: StatsBreakdownProps) {
   const stats = useMemo(() => {
     let totalLocked = 0;
     let released = 0;
@@ -48,6 +49,16 @@ export default function StatsBreakdown({ pacts }: StatsBreakdownProps) {
     };
   }, [pacts]);
 
+  const formatVal = (stxAmount: number) => {
+    if (currency === "USD") {
+      return `$${(stxAmount * 2.5).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+    }
+    if (currency === "EUR") {
+      return `€${(stxAmount * 2.3).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR`;
+    }
+    return `${stxAmount.toLocaleString()} STX`;
+  };
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 24 }}>
       <div className="glass-card" style={{ padding: 20, position: "relative", overflow: "hidden" }}>
@@ -56,7 +67,7 @@ export default function StatsBreakdown({ pacts }: StatsBreakdownProps) {
           <span style={{ fontSize: 20 }}>🔒</span>
         </div>
         <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)" }}>
-          {stats.totalLocked.toLocaleString()} STX
+          {formatVal(stats.totalLocked)}
         </div>
         <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
           Escrowed in active contracts
@@ -69,7 +80,7 @@ export default function StatsBreakdown({ pacts }: StatsBreakdownProps) {
           <span style={{ fontSize: 20 }}>💸</span>
         </div>
         <div style={{ fontSize: 24, fontWeight: 800, color: "var(--success)" }}>
-          {stats.released.toLocaleString()} STX
+          {formatVal(stats.released)}
         </div>
         <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
           Paid to developers

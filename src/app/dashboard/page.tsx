@@ -27,9 +27,17 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"deadline" | "amount" | "default">("default");
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState<"STX" | "USD" | "EUR">("STX");
 
   const { toast } = useToast();
   const { connected } = useWallet();
+
+  useEffect(() => {
+    const saved = localStorage.getItem("pactforge_v2_currency");
+    if (saved && (saved === "STX" || saved === "USD" || saved === "EUR")) {
+      setCurrency(saved as any);
+    }
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -175,7 +183,34 @@ export default function DashboardPage() {
             <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.02em" }}>Dashboard</h1>
             <p style={{ color: "#94a3b8", marginTop: 6 }}>Manage your pacts, track milestones, and monitor earnings.</p>
           </div>
-          <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            {/* Currency Pill Selector */}
+            <div style={{ display: "flex", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", padding: 3, borderRadius: 10 }}>
+              {(["STX", "USD", "EUR"] as const).map((curr) => (
+                <button
+                  key={curr}
+                  onClick={() => {
+                    setCurrency(curr);
+                    localStorage.setItem("pactforge_v2_currency", curr);
+                    toast(`Display currency set to ${curr}`, "info");
+                  }}
+                  style={{
+                    background: currency === curr ? "rgba(99,102,241,0.15)" : "transparent",
+                    border: "none",
+                    borderRadius: 8,
+                    color: currency === curr ? "var(--text-primary)" : "var(--text-muted)",
+                    padding: "6px 12px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  {curr}
+                </button>
+              ))}
+            </div>
+
             <button onClick={handleResetStore} className="btn btn-danger" style={{ padding: "8px 20px", fontSize: 13, background: "rgba(239, 68, 68, 0.12)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.2)" }}>
               🔄 Reset State
             </button>
@@ -205,7 +240,7 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-            <StatsBreakdown pacts={pacts} />
+            <StatsBreakdown pacts={pacts} currency={currency} />
           </>
         )}
 
