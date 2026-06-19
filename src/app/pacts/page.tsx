@@ -37,6 +37,9 @@ function PactDetailContent() {
   const [obstacleTargetId, setObstacleTargetId] = useState<number | null>(null);
   const [obstacleText, setObstacleText] = useState("");
 
+  const [milestoneSearch, setMilestoneSearch] = useState("");
+  const [milestoneFilter, setMilestoneFilter] = useState<number | "all">("all");
+
   useEffect(() => {
     setLoading(true);
     const timer = setTimeout(() => {
@@ -294,6 +297,15 @@ function PactDetailContent() {
   const completedMs = (pact.milestones || []).filter(m => m.state >= 3).length;
   const progress = pact.milestones?.length > 0 ? (completedMs / pact.milestones.length) * 100 : 0;
 
+  const filteredMilestones = (pact.milestones || []).filter(ms => {
+    if (milestoneFilter !== "all" && ms.state !== milestoneFilter) return false;
+    if (milestoneSearch) {
+      const q = milestoneSearch.toLowerCase();
+      if (!(ms.title || "").toLowerCase().includes(q) && !(ms.description || "").toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
   return (
     <div style={{ minHeight: "100vh", paddingTop: 96, paddingBottom: 60 }}>
       <div className="container" style={{ maxWidth: 800 }}>
@@ -359,9 +371,57 @@ function PactDetailContent() {
         </div>
 
         {/* Milestones Timeline */}
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Milestones</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Milestones</h2>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              type="text"
+              placeholder="Search milestones..."
+              value={milestoneSearch}
+              onChange={(e) => setMilestoneSearch(e.target.value)}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "6px 12px",
+                color: "#f1f5f9",
+                fontSize: 12,
+                outline: "none",
+                minWidth: 160
+              }}
+            />
+            <select
+              value={milestoneFilter}
+              onChange={(e) => setMilestoneFilter(e.target.value === "all" ? "all" : parseInt(e.target.value))}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "6px 12px",
+                color: "#f1f5f9",
+                fontSize: 12,
+                outline: "none",
+                cursor: "pointer"
+              }}
+            >
+              <option value="all" style={{ background: "#0f172a" }}>All Statuses</option>
+              <option value="0" style={{ background: "#0f172a" }}>Pending</option>
+              <option value="1" style={{ background: "#0f172a" }}>In Progress</option>
+              <option value="2" style={{ background: "#0f172a" }}>Submitted</option>
+              <option value="3" style={{ background: "#0f172a" }}>Approved</option>
+              <option value="4" style={{ background: "#0f172a" }}>Rejected</option>
+              <option value="5" style={{ background: "#0f172a" }}>Paid</option>
+            </select>
+          </div>
+        </div>
+
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
-          {(pact.milestones || []).map((ms, i) => {
+          {filteredMilestones.length === 0 ? (
+            <div style={{ padding: 30, textAlign: "center", color: "#64748b", background: "rgba(255,255,255,0.01)", borderRadius: 12 }}>
+              No milestones match search criteria.
+            </div>
+          ) : filteredMilestones.map((ms) => {
+            const originalIndex = (pact.milestones || []).findIndex(m => m.id === ms.id);
             const st = msColors[ms.state] || { bg: "rgba(255,255,255,0.05)", color: "#fff", label: "Unknown" };
             return (
               <div key={ms.id} className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
@@ -370,7 +430,7 @@ function PactDetailContent() {
                   display: "flex", alignItems: "center", justifyContent: "center",
                   background: st.bg, color: st.color, fontWeight: 800, fontSize: 14,
                   border: `1px solid ${st.color}33`,
-                }}>{i + 1}</div>
+                }}>{originalIndex + 1}</div>
                 <div style={{ flex: 1, minWidth: 150 }}>
                   <div style={{ fontWeight: 600, marginBottom: 2 }}>{ms.title || "Untitled"}</div>
                   <div style={{ fontSize: 13, color: "#64748b" }}>{ms.description || ""}</div>
