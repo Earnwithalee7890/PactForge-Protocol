@@ -9,6 +9,7 @@ import confetti from "canvas-confetti";
 import { request } from "@stacks/connect";
 import { uintCV, stringUtf8CV, bufferCV } from "@stacks/transactions";
 import { useWallet } from "@/context/WalletContext";
+import ExplorerModal from "@/components/ExplorerModal";
 
 const msColors: Record<number, { bg: string; color: string; label: string }> = {
   0: { bg: "rgba(148,163,184,0.12)", color: "#94a3b8", label: "Pending" },
@@ -39,6 +40,9 @@ function PactDetailContent() {
 
   const [milestoneSearch, setMilestoneSearch] = useState("");
   const [milestoneFilter, setMilestoneFilter] = useState<number | "all">("all");
+
+  const [explorerAddress, setExplorerAddress] = useState("");
+  const [isExplorerOpen, setIsExplorerOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -358,10 +362,36 @@ function PactDetailContent() {
             { label: "Client", addr: pact.client, icon: "👤" },
             { label: "Provider", addr: pact.provider, icon: "🛠️" },
           ].map((p, i) => (
-            <div key={i} className="glass-card" style={{ padding: 20, display: "flex", alignItems: "center", gap: 12 }}>
+            <div 
+              key={i} 
+              className="glass-card" 
+              onClick={() => {
+                if (p.addr && p.addr.startsWith("SP")) {
+                  setExplorerAddress(p.addr);
+                  setIsExplorerOpen(true);
+                }
+              }}
+              style={{ 
+                padding: 20, 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 12, 
+                cursor: p.addr?.startsWith("SP") ? "pointer" : "default",
+                transition: "transform 0.2s" 
+              }}
+              onMouseEnter={e => {
+                if (p.addr?.startsWith("SP")) e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={e => {
+                if (p.addr?.startsWith("SP")) e.currentTarget.style.transform = "none";
+              }}
+            >
               <div style={{ fontSize: 24 }}>{p.icon}</div>
               <div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>{p.label}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>{p.label}</div>
+                  {p.addr?.startsWith("SP") && <span style={{ fontSize: 10, color: "#6366f1", opacity: 0.8 }}>🔍 Inspect</span>}
+                </div>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#f1f5f9" }}>
                   {p.addr && p.addr.length > 15 ? `${p.addr.slice(0, 8)}...${p.addr.slice(-6)}` : p.addr || "Not Set"}
                 </div>
@@ -586,6 +616,13 @@ function PactDetailContent() {
           </div>
         </div>
       )}
+
+      {/* Stacks On-Chain Explorer Modal */}
+      <ExplorerModal 
+        isOpen={isExplorerOpen} 
+        onClose={() => setIsExplorerOpen(false)} 
+        targetAddress={explorerAddress} 
+      />
     </div>
   );
 }
