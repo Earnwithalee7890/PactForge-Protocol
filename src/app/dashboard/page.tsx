@@ -23,11 +23,19 @@ const stateColors: Record<string, { bg: string; color: string }> = {
 
 export default function DashboardPage() {
   const [pacts, setPacts] = useState<Pact[]>([]);
-  const [tab, setTab] = useState<"all" | "active" | "completed" | "draft">("all");
+  const [tab, setTab] = useState<"all" | "active" | "completed" | "draft" | "settings">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"deadline" | "amount" | "default">("default");
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState<"STX" | "USD" | "EUR">("STX");
+
+  // Settings states
+  const [emailNotif, setEmailNotif] = useState(true);
+  const [autoSync, setAutoSync] = useState(true);
+  const [selectedNetwork, setSelectedNetwork] = useState<"mainnet" | "testnet" | "mock">("mainnet");
+  const [customNodeUrl, setCustomNodeUrl] = useState("https://api.mainnet.hiro.so");
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState(30);
+  const [walletAlerts, setWalletAlerts] = useState(true);
 
   const { toast } = useToast();
   const { connected } = useWallet();
@@ -37,6 +45,26 @@ export default function DashboardPage() {
     if (saved && (saved === "STX" || saved === "USD" || saved === "EUR")) {
       setCurrency(saved as any);
     }
+
+    const savedEmail = localStorage.getItem("pactforge_settings_email");
+    if (savedEmail !== null) setEmailNotif(savedEmail === "true");
+    
+    const savedSync = localStorage.getItem("pactforge_settings_sync");
+    if (savedSync !== null) setAutoSync(savedSync === "true");
+    
+    const savedNet = localStorage.getItem("pactforge_settings_network");
+    if (savedNet === "mainnet" || savedNet === "testnet" || savedNet === "mock") {
+      setSelectedNetwork(savedNet as any);
+    }
+    
+    const savedNode = localStorage.getItem("pactforge_settings_node");
+    if (savedNode) setCustomNodeUrl(savedNode);
+
+    const savedInterval = localStorage.getItem("pactforge_settings_interval");
+    if (savedInterval) setAutoRefreshInterval(parseInt(savedInterval) || 30);
+
+    const savedAlerts = localStorage.getItem("pactforge_settings_alerts");
+    if (savedAlerts !== null) setWalletAlerts(savedAlerts === "true");
   }, []);
 
   useEffect(() => {
@@ -49,6 +77,7 @@ export default function DashboardPage() {
   }, []);
 
   const filtered = useMemo(() => {
+    if (tab === "settings") return [];
     return pacts.filter(p => {
       if (tab !== "all" && p.state !== tab) return false;
       if (searchQuery) {
@@ -167,6 +196,67 @@ export default function DashboardPage() {
     }
   };
 
+  const handleSaveSettings = () => {
+    localStorage.setItem("pactforge_settings_email", String(emailNotif));
+    localStorage.setItem("pactforge_settings_sync", String(autoSync));
+    localStorage.setItem("pactforge_settings_network", selectedNetwork);
+    localStorage.setItem("pactforge_settings_node", customNodeUrl);
+    localStorage.setItem("pactforge_settings_interval", String(autoRefreshInterval));
+    localStorage.setItem("pactforge_settings_alerts", String(walletAlerts));
+    toast("Settings saved successfully!", "success");
+  };
+
+  const handleExportData = () => {
+    const data = {
+      pacts: pactStore.getPacts(),
+      currency,
+      settings: {
+        emailNotif,
+        autoSync,
+        selectedNetwork,
+        customNodeUrl,
+        autoRefreshInterval,
+        walletAlerts
+      }
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `pactforge_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    toast("Backup configuration file downloaded!", "success");
+  };
+
+  const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        if (parsed.pacts && Array.isArray(parsed.pacts)) {
+          localStorage.setItem("pactforge_v2_pacts", JSON.stringify(parsed.pacts));
+          setPacts(parsed.pacts);
+          if (parsed.settings) {
+            if (parsed.settings.emailNotif !== undefined) setEmailNotif(parsed.settings.emailNotif);
+            if (parsed.settings.autoSync !== undefined) setAutoSync(parsed.settings.autoSync);
+            if (parsed.settings.selectedNetwork !== undefined) setSelectedNetwork(parsed.settings.selectedNetwork);
+            if (parsed.settings.customNodeUrl !== undefined) setCustomNodeUrl(parsed.settings.customNodeUrl);
+            if (parsed.settings.autoRefreshInterval !== undefined) setAutoRefreshInterval(parsed.settings.autoRefreshInterval);
+            if (parsed.settings.walletAlerts !== undefined) setWalletAlerts(parsed.settings.walletAlerts);
+          }
+          toast("Database restored from backup successfully!", "success");
+        } else {
+          toast("Invalid backup file format.", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        toast("Failed to parse backup file.", "error");
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleResetStore = () => {
     if (confirm("Are you sure you want to reset all mock pacts and reputation stats? This will restore clean mock database states.")) {
       pactStore.clearAll();
@@ -221,7 +311,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Row */}
-        {loading ? (
+        {tab !== "settings" && (loading ? (
           <div style={{ marginBottom: 40 }}><SkeletonLoader count={4} type="stat" /></div>
         ) : (
           <>
@@ -242,120 +332,369 @@ export default function DashboardPage() {
             </div>
             <StatsBreakdown pacts={pacts} currency={currency} />
           </>
-        )}
+        ))}
 
         {/* Payouts Chart */}
-        {!loading && <PayoutChart />}
+        {!loading && tab !== "settings" && <PayoutChart />}
 
         {/* Toolbar: Tabs, Search, Sort */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8 }}>
-            {(["all", "draft", "active", "completed"] as const).map(t => (
+            {(["all", "draft", "active", "completed", "settings"] as const).map(t => (
               <button key={t} onClick={() => setTab(t as any)}
                 className={tab === t ? "btn btn-primary" : "btn btn-secondary"}
                 style={{ padding: "8px 20px", fontSize: 13, textTransform: "capitalize" }}>
-                {t === "all" ? "All Pacts" : t}
+                {t === "all" ? "All Pacts" : t === "settings" ? "⚙️ Settings" : t}
               </button>
             ))}
           </div>
           
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <input 
-              type="text" 
-              placeholder="Search pacts..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 8,
-                padding: "8px 16px",
-                color: "#f1f5f9",
-                fontSize: 13,
-                outline: "none",
-                minWidth: 200
-              }}
-            />
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value as any)}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 8,
-                padding: "8px 16px",
-                color: "#f1f5f9",
-                fontSize: 13,
-                outline: "none",
-                cursor: "pointer"
-              }}
-            >
-              <option value="default" style={{ background: "#0f172a" }}>Sort by: Default</option>
-              <option value="amount" style={{ background: "#0f172a" }}>Sort by: Amount</option>
-              <option value="deadline" style={{ background: "#0f172a" }}>Sort by: Deadline</option>
-            </select>
-          </div>
+          {tab !== "settings" && (
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <input 
+                type="text" 
+                placeholder="Search pacts..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 8,
+                  padding: "8px 16px",
+                  color: "#f1f5f9",
+                  fontSize: 13,
+                  outline: "none",
+                  minWidth: 200
+                }}
+              />
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value as any)}
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 8,
+                  padding: "8px 16px",
+                  color: "#f1f5f9",
+                  fontSize: 13,
+                  outline: "none",
+                  cursor: "pointer"
+                }}
+              >
+                <option value="default" style={{ background: "#0f172a" }}>Sort by: Default</option>
+                <option value="amount" style={{ background: "#0f172a" }}>Sort by: Amount</option>
+                <option value="deadline" style={{ background: "#0f172a" }}>Sort by: Deadline</option>
+              </select>
+            </div>
+          )}
         </div>
 
-        {/* Pacts List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {loading ? (
-            <SkeletonLoader count={4} type="row" />
-          ) : filtered.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", color: "#64748b", background: "rgba(255,255,255,0.02)", borderRadius: 16 }}>
-              No pacts found matching your criteria.
+        {/* Pacts List or Settings Panel */}
+        {tab === "settings" ? (
+          <div className="glass-card" style={{ padding: 32, display: "flex", flexDirection: "column", gap: 32 }}>
+            <div style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 700 }}>Configuration Panel</h2>
+              <p style={{ color: "#94a3b8", fontSize: 13, marginTop: 4 }}>
+                Adjust blockchain API nodes, toggle notification behaviors, and manage local storage backups.
+              </p>
             </div>
-          ) : filtered.map(p => {
-            const total = p.milestones?.length || 0;
-            const completed = (p.milestones || []).filter(m => m.state >= 3).length;
-            const pct = total > 0 ? (completed / total) * 100 : 0;
-            const hasNext = (p.milestones || []).some(m => m.state < 3);
-            const linkHref = p.state === "draft" ? `/create-pact?id=${p.id}` : `/pacts?id=${p.id}`;
-            return (
-              <Link key={p.id} href={linkHref} style={{ textDecoration: "none", color: "inherit" }}>
-                <div className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", cursor: "pointer", transition: "transform 0.2s" }}
-                  onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
-                  onMouseLeave={e => e.currentTarget.style.transform = "none"}>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{p.title || "Untitled"}</div>
-                    <div style={{ fontSize: 13, color: "#64748b", fontFamily: "var(--font-mono)" }}>Provider: {p.provider || "Not Set"}</div>
-                  </div>
-                  <div style={{ textAlign: "center", minWidth: 100 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.totalAmount || "0 STX"}</div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>Value</div>
-                  </div>
-                  <div style={{ textAlign: "center", minWidth: 100 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{completed}/{total}</div>
-                    <div style={{ width: 80, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", marginTop: 6 }}>
-                      <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg, #6366f1, #8b5cf6)", transition: "width 0.5s ease" }} />
-                    </div>
-                    <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>Milestones</div>
-                  </div>
-                  <div style={{ textAlign: "center", minWidth: 80 }}>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>{p.deadline}</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    {p.state === 'created' && (
-                      <button onClick={e => handleFundPact(e, p.id)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: 11 }}>
-                        ⚡ Fund Pact
-                      </button>
-                    )}
-                    {p.state === 'active' && hasNext && (
-                      <button onClick={e => handleCompleteNext(e, p)} className="btn btn-success" style={{ padding: "6px 12px", fontSize: 11 }}>
-                        ✅ Complete MS
-                      </button>
-                    )}
-                    <div style={{
-                      padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
-                      background: stateColors[p.state]?.bg, color: stateColors[p.state]?.color,
-                      textTransform: "capitalize",
-                    }}>{p.state}</div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 32 }}>
+              {/* Category 1: Network Preferences */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "#f1f5f9" }}>🌐 Network Settings</h3>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 12, color: "#94a3b8" }}>Target Network</label>
+                  <select 
+                    value={selectedNetwork} 
+                    onChange={(e) => setSelectedNetwork(e.target.value as any)}
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                      color: "#f1f5f9",
+                      fontSize: 13,
+                      outline: "none",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <option value="mainnet" style={{ background: "#0f172a" }}>Mainnet</option>
+                    <option value="testnet" style={{ background: "#0f172a" }}>Testnet</option>
+                    <option value="mock" style={{ background: "#0f172a" }}>Mocknet / Devnet</option>
+                  </select>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 12, color: "#94a3b8" }}>Stacks Node API URL</label>
+                  <input 
+                    type="text" 
+                    value={customNodeUrl}
+                    onChange={(e) => setCustomNodeUrl(e.target.value)}
+                    placeholder="https://api.mainnet.hiro.so"
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                      color: "#f1f5f9",
+                      fontSize: 13,
+                      outline: "none",
+                    }}
+                  />
+                  <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                    <span 
+                      onClick={() => setCustomNodeUrl("https://api.mainnet.hiro.so")}
+                      style={{ fontSize: 11, color: "#6366f1", cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      Hiro Mainnet
+                    </span>
+                    <span 
+                      onClick={() => setCustomNodeUrl("https://api.testnet.hiro.so")}
+                      style={{ fontSize: 11, color: "#6366f1", cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      Hiro Testnet
+                    </span>
                   </div>
                 </div>
-              </Link>
-            );
-          })}
-        </div>
+              </div>
+
+              {/* Category 2: Notification & Alerts */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "#f1f5f9" }}>🔔 Notifications & Polling</h3>
+                
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Email Digests</div>
+                    <div style={{ fontSize: 11, color: "#64748b" }}>Receive weekly milestone completion logs.</div>
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    checked={emailNotif}
+                    onChange={(e) => setEmailNotif(e.target.checked)}
+                    style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#6366f1" }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Live Wallet Alerts</div>
+                    <div style={{ fontSize: 11, color: "#64748b" }}>Pop up system toasts on contract events.</div>
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    checked={walletAlerts}
+                    onChange={(e) => setWalletAlerts(e.target.checked)}
+                    style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#6366f1" }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Decentralized Auto-Sync</div>
+                    <div style={{ fontSize: 11, color: "#64748b" }}>Auto fetch new escrow data on app startup.</div>
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    checked={autoSync}
+                    onChange={(e) => setAutoSync(e.target.checked)}
+                    style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#6366f1" }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 12, color: "#94a3b8" }}>Auto-Refresh Polling Interval</label>
+                  <select 
+                    value={autoRefreshInterval} 
+                    onChange={(e) => setAutoRefreshInterval(parseInt(e.target.value) || 30)}
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                      color: "#f1f5f9",
+                      fontSize: 13,
+                      outline: "none",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <option value="15" style={{ background: "#0f172a" }}>Every 15 seconds</option>
+                    <option value="30" style={{ background: "#0f172a" }}>Every 30 seconds</option>
+                    <option value="60" style={{ background: "#0f172a" }}>Every 60 seconds</option>
+                    <option value="120" style={{ background: "#0f172a" }}>Every 2 minutes</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Category 3: Active Smart Contracts */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "#f1f5f9" }}>📜 Contract Deployments</h3>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 12 }}>
+                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Pact Core</div>
+                    <div style={{ fontSize: 12, wordBreak: "break-all", fontFamily: "var(--font-mono)", marginTop: 2 }}>
+                      SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactcore
+                    </div>
+                    <a 
+                      href="https://explorer.hiro.so/txid/SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.pactcore?chain=mainnet" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      style={{ fontSize: 11, color: "#6366f1", textDecoration: "none", display: "inline-block", marginTop: 4 }}
+                    >
+                      View on Explorer ↗
+                    </a>
+                  </div>
+
+                  <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 12 }}>
+                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Milestone SBT</div>
+                    <div style={{ fontSize: 12, wordBreak: "break-all", fontFamily: "var(--font-mono)", marginTop: 2 }}>
+                      SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.milestone-v2
+                    </div>
+                    <a 
+                      href="https://explorer.hiro.so/txid/SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.milestone-v2?chain=mainnet" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      style={{ fontSize: 11, color: "#6366f1", textDecoration: "none", display: "inline-block", marginTop: 4 }}
+                    >
+                      View on Explorer ↗
+                    </a>
+                  </div>
+
+                  <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 12 }}>
+                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Reputation SBT</div>
+                    <div style={{ fontSize: 12, wordBreak: "break-all", fontFamily: "var(--font-mono)", marginTop: 2 }}>
+                      SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.reputation-sbt-v2
+                    </div>
+                    <a 
+                      href="https://explorer.hiro.so/txid/SP2F500B8DTRK1EANJQ054BRAB8DDKN6QCMXGNFBT.reputation-sbt-v2?chain=mainnet" 
+                      target="_blank" 
+                      rel="noreferrer"
+                      style={{ fontSize: 11, color: "#6366f1", textDecoration: "none", display: "inline-block", marginTop: 4 }}
+                    >
+                      View on Explorer ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Category 4: Data Portability */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "#f1f5f9" }}>💾 Backup & Diagnostics</h3>
+                
+                <p style={{ fontSize: 12, color: "#64748b", lineHeight: "1.5" }}>
+                  Export your current database state to back up configuration. You can also import a previous backup file to restore pact statuses and credentials.
+                </p>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <button 
+                    onClick={handleExportData} 
+                    className="btn btn-secondary" 
+                    style={{ padding: "10px 16px", fontSize: 13, width: "100%", textAlign: "center" }}
+                  >
+                    📥 Export Backup JSON
+                  </button>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <label style={{ fontSize: 12, color: "#94a3b8" }}>Import Backup File</label>
+                    <input 
+                      type="file" 
+                      accept=".json"
+                      onChange={handleImportData}
+                      style={{
+                        background: "rgba(255,255,255,0.03)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 8,
+                        padding: "6px 12px",
+                        color: "#94a3b8",
+                        fontSize: 12,
+                        cursor: "pointer"
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Buttons Footer */}
+            <div style={{ display: "flex", gap: 12, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 24, justifyContent: "flex-end" }}>
+              <button 
+                onClick={() => setTab("all")} 
+                className="btn btn-secondary" 
+                style={{ padding: "10px 24px", fontSize: 13 }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveSettings} 
+                className="btn btn-primary" 
+                style={{ padding: "10px 28px", fontSize: 13 }}
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {loading ? (
+              <SkeletonLoader count={4} type="row" />
+            ) : filtered.length === 0 ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#64748b", background: "rgba(255,255,255,0.02)", borderRadius: 16 }}>
+                No pacts found matching your criteria.
+              </div>
+            ) : filtered.map(p => {
+              const total = p.milestones?.length || 0;
+              const completed = (p.milestones || []).filter(m => m.state >= 3).length;
+              const pct = total > 0 ? (completed / total) * 100 : 0;
+              const hasNext = (p.milestones || []).some(m => m.state < 3);
+              const linkHref = p.state === "draft" ? `/create-pact?id=${p.id}` : `/pacts?id=${p.id}`;
+              return (
+                <Link key={p.id} href={linkHref} style={{ textDecoration: "none", color: "inherit" }}>
+                  <div className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", cursor: "pointer", transition: "transform 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "none"}>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{p.title || "Untitled"}</div>
+                      <div style={{ fontSize: 13, color: "#64748b", fontFamily: "var(--font-mono)" }}>Provider: {p.provider || "Not Set"}</div>
+                    </div>
+                    <div style={{ textAlign: "center", minWidth: 100 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.totalAmount || "0 STX"}</div>
+                      <div style={{ fontSize: 12, color: "#64748b" }}>Value</div>
+                    </div>
+                    <div style={{ textAlign: "center", minWidth: 100 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{completed}/{total}</div>
+                      <div style={{ width: 80, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.06)", marginTop: 6 }}>
+                        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: "linear-gradient(90deg, #6366f1, #8b5cf6)", transition: "width 0.5s ease" }} />
+                      </div>
+                      <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>Milestones</div>
+                    </div>
+                    <div style={{ textAlign: "center", minWidth: 80 }}>
+                      <div style={{ fontSize: 12, color: "#64748b" }}>{p.deadline}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {p.state === 'created' && (
+                        <button onClick={e => handleFundPact(e, p.id)} className="btn btn-primary" style={{ padding: "6px 12px", fontSize: 11 }}>
+                          ⚡ Fund Pact
+                        </button>
+                      )}
+                      {p.state === 'active' && hasNext && (
+                        <button onClick={e => handleCompleteNext(e, p)} className="btn btn-success" style={{ padding: "6px 12px", fontSize: 11 }}>
+                          ✅ Complete MS
+                        </button>
+                      )}
+                      <div style={{
+                        padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
+                        background: stateColors[p.state]?.bg, color: stateColors[p.state]?.color,
+                        textTransform: "capitalize",
+                      }}>{p.state}</div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
