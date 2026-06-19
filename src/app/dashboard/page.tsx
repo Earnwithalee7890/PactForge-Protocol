@@ -5,6 +5,7 @@ import { pactStore } from "@/lib/pactStore";
 import { Pact } from "@/lib/types";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import PayoutChart from "@/components/PayoutChart";
+import StatsBreakdown from "@/components/StatsBreakdown";
 import { useToast } from "@/components/Toaster";
 import { request } from "@stacks/connect";
 import { uintCV } from "@stacks/transactions";
@@ -188,21 +189,24 @@ export default function DashboardPage() {
         {loading ? (
           <div style={{ marginBottom: 40 }}><SkeletonLoader count={4} type="stat" /></div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 40 }}>
-            {dashboardStats.map((s, i) => (
-              <div key={i} className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{
-                  width: 48, height: 48, borderRadius: 12, fontSize: 22,
-                  background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.15)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>{s.icon}</div>
-                <div>
-                  <div style={{ fontSize: 13, color: "#64748b" }}>{s.label}</div>
-                  <div className="stat-value" style={{ fontSize: 22 }}>{s.value}</div>
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 20 }}>
+              {dashboardStats.map((s, i) => (
+                <div key={i} className="glass-card" style={{ padding: 24, display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 12, fontSize: 22,
+                    background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.15)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>{s.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 13, color: "#64748b" }}>{s.label}</div>
+                    <div className="stat-value" style={{ fontSize: 22 }}>{s.value}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <StatsBreakdown pacts={pacts} />
+          </>
         )}
 
         {/* Payouts Chart */}
