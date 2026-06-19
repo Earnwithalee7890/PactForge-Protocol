@@ -291,10 +291,66 @@ function CreatePactForm() {
         {/* Step 2: Milestones */}
         {step === 2 && (
           <div className="glass-card" style={{ padding: 36 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ fontSize: 20, fontWeight: 700 }}>Milestones ({milestones.length}/10)</h2>
               <button className="btn btn-secondary" onClick={addMilestone} style={{ padding: "8px 16px", fontSize: 13 }}>+ Add</button>
             </div>
+
+            {/* Templates Presets */}
+            <div style={{ marginBottom: 24, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: "rgba(255,255,255,0.02)", padding: "12px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.04)" }}>
+              <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.02em" }}>Presets:</span>
+              {[
+                {
+                  label: "50/50 Split",
+                  apply: () => {
+                    const total = parseFloat(totalAmount) || 1000;
+                    const half = (total / 2).toFixed(2);
+                    setMilestones([
+                      { title: "Phase 1 Delivery", description: "Deliver initial contract components", amount: half },
+                      { title: "Phase 2 Delivery", description: "Final testing, deployment, and handover", amount: half }
+                    ]);
+                  }
+                },
+                {
+                  label: "3-Step (30/40/30)",
+                  apply: () => {
+                    const total = parseFloat(totalAmount) || 1000;
+                    setMilestones([
+                      { title: "Milestone 1 (Design & Setup)", description: "Requirements gathering and UI prototypes", amount: (total * 0.3).toFixed(2) },
+                      { title: "Milestone 2 (Core Build)", description: "Core functionality and logic building", amount: (total * 0.4).toFixed(2) },
+                      { title: "Milestone 3 (Launch & Audit)", description: "Polishing, testing, and production deployment", amount: (total * 0.3).toFixed(2) }
+                    ]);
+                  }
+                },
+                {
+                  label: "4-Phase Retainer (25% each)",
+                  apply: () => {
+                    const total = parseFloat(totalAmount) || 1000;
+                    const quarter = (total / 4).toFixed(2);
+                    setMilestones([
+                      { title: "Design & Specs", description: "Wireframes and project specs document", amount: quarter },
+                      { title: "Alpha Prototype", description: "First working draft layout and APIs", amount: quarter },
+                      { title: "Beta Handover", description: "Ready prototype for client user testing", amount: quarter },
+                      { title: "Final Production", description: "Live site deployment and audit report", amount: quarter }
+                    ]);
+                  }
+                }
+              ].map((template, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    template.apply();
+                    toast(`Applied ${template.label} template!`, "success");
+                  }}
+                  className="btn btn-secondary"
+                  style={{ padding: "6px 12px", fontSize: 11, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", color: "#8f94fb" }}
+                >
+                  {template.label}
+                </button>
+              ))}
+            </div>
+
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {milestones.map((ms, i) => (
                 <div key={i} style={{
