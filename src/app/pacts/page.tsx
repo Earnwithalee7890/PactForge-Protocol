@@ -26,7 +26,7 @@ function PactDetailContent() {
   const idParam = searchParams.get("id");
   const [pact, setPact] = useState<Pact | null>(null);
   const { toast } = useToast();
-  const { connected } = useWallet();
+  const { connected, address } = useWallet();
   const [isTxPending, setIsTxPending] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -45,6 +45,44 @@ function PactDetailContent() {
   const [explorerAddress, setExplorerAddress] = useState("");
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [activePopover, setActivePopover] = useState<"client" | "provider" | null>(null);
+
+  const [obstacleComments, setObstacleComments] = useState<Record<string, Array<{ sender: string; text: string; date: string }>>>({});
+  const [obstacleCommentInput, setObstacleCommentInput] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const saved = localStorage.getItem("pactforge_v2_obstacle_comments");
+    if (saved) {
+      try {
+        setObstacleComments(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  const handleAddObstacleComment = (milestoneKey: string) => {
+    const text = obstacleCommentInput[milestoneKey];
+    if (!text || !text.trim()) return;
+
+    const newComment = {
+      sender: address || "SP_ANON",
+      text: text.trim(),
+      date: new Date().toISOString()
+    };
+
+    const updated = {
+      ...obstacleComments,
+      [milestoneKey]: [...(obstacleComments[milestoneKey] || []), newComment]
+    };
+
+    setObstacleComments(updated);
+    localStorage.setItem("pactforge_v2_obstacle_comments", JSON.stringify(updated));
+    setObstacleCommentInput({
+      ...obstacleCommentInput,
+      [milestoneKey]: ""
+    });
+    toast("Reply posted to obstacle thread!", "success");
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -617,19 +655,73 @@ function PactDetailContent() {
                   )}
                   <div style={{ padding: "4px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600, background: st.bg, color: st.color }}>{st.label}</div>
                 </div>
-                {ms.obstacle && (
-                  <div style={{ width: "100%", marginTop: 12, padding: 16, borderRadius: 8, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                      <div>
-                        <div style={{ color: "#ef4444", fontWeight: 700, fontSize: 13, marginBottom: 4 }}>⚠️ Blocked / Obstacle Reported</div>
-                        <div style={{ fontSize: 13, color: "#f87171" }}>{ms.obstacle}</div>
+                {ms.obstacle && (() => {
+                  const msKey = `${pact.id}_${ms.id}`;
+                  const comments = obstacleComments[msKey] || [];
+                  return (
+                    <div style={{ width: "100%", marginTop: 12, padding: 20, borderRadius: 12, background: "rgba(239, 68, 68, 0.06)", border: "1px solid rgba(239, 68, 68, 0.15)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                        <div>
+                          <div style={{ color: "#ef4444", fontWeight: 700, fontSize: 13, marginBottom: 4 }}>⚠️ Blocked / Obstacle Flagged</div>
+                          <div style={{ fontSize: 13, color: "#f87171", fontWeight: 600 }}>"{ms.obstacle}"</div>
+                        </div>
+                        <button onClick={() => handleClearObstacle(ms.id)} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: 11, borderColor: "rgba(239, 68, 68, 0.3)", color: "#f87171" }}>
+                          Clear Block
+                        </button>
                       </div>
-                      <button onClick={() => handleClearObstacle(ms.id)} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: 11, borderColor: "rgba(239,68,68,0.4)" }}>
-                        Clear Block
-                      </button>
+
+                      {/* Discussion Thread */}
+                      <div style={{ borderTop: "1px solid rgba(239, 68, 68, 0.12)", paddingTop: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: 8 }}>Obstacle Discussion</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12, maxHeight: 120, overflowY: "auto" }}>
+                          {comments.length === 0 ? (
+                            <div style={{ fontSize: 12, color: "#64748b", fontStyle: "italic" }}>No replies yet. Client and provider can coordinate here.</div>
+                          ) : (
+                            comments.map((c, cIdx) => (
+                              <div key={cIdx} style={{ background: "rgba(0,0,0,0.15)", padding: 10, borderRadius: 8, border: "1px solid rgba(255,255,255,0.03)" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginBottom: 4 }}>
+                                  <span style={{ fontFamily: "var(--font-mono)" }}>
+                                    {c.sender === address ? "You" : `${c.sender.slice(0, 6)}...${c.sender.slice(-4)}`}
+                                  </span>
+                                  <span>{new Date(c.date).toLocaleDateString()} {new Date(c.date).toLocaleTimeString()}</span>
+                                </div>
+                                <div style={{ fontSize: 12, color: "#f1f5f9" }}>{c.text}</div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Reply Form */}
+                        {connected && (
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <input
+                              type="text"
+                              placeholder="Post coordination message..."
+                              value={obstacleCommentInput[msKey] || ""}
+                              onChange={(e) => setObstacleCommentInput({ ...obstacleCommentInput, [msKey]: e.target.value })}
+                              style={{
+                                flex: 1,
+                                background: "rgba(0,0,0,0.2)",
+                                border: "1px solid rgba(255, 255, 255, 0.08)",
+                                borderRadius: 8,
+                                padding: "6px 12px",
+                                color: "#f1f5f9",
+                                fontSize: 12,
+                                outline: "none"
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleAddObstacleComment(msKey);
+                              }}
+                            />
+                            <button onClick={() => handleAddObstacleComment(msKey)} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: 11 }}>
+                              Reply
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             );
           })}
