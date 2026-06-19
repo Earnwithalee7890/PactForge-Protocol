@@ -10,6 +10,7 @@ import { request } from "@stacks/connect";
 import { uintCV, stringUtf8CV, bufferCV } from "@stacks/transactions";
 import { useWallet } from "@/context/WalletContext";
 import ExplorerModal from "@/components/ExplorerModal";
+import ParticipantPopover from "@/components/ParticipantPopover";
 
 const msColors: Record<number, { bg: string; color: string; label: string }> = {
   0: { bg: "rgba(148,163,184,0.12)", color: "#94a3b8", label: "Pending" },
@@ -43,6 +44,7 @@ function PactDetailContent() {
 
   const [explorerAddress, setExplorerAddress] = useState("");
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
+  const [activePopover, setActivePopover] = useState<"client" | "provider" | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -359,8 +361,8 @@ function PactDetailContent() {
         {/* Participants */}
         <div className="responsive-grid" style={{ marginBottom: 24 }}>
           {[
-            { label: "Client", addr: pact.client, icon: "👤" },
-            { label: "Provider", addr: pact.provider, icon: "🛠️" },
+            { label: "Client", addr: pact.client, icon: "👤", key: "client" as const },
+            { label: "Provider", addr: pact.provider, icon: "🛠️", key: "provider" as const },
           ].map((p, i) => (
             <div 
               key={i} 
@@ -377,17 +379,24 @@ function PactDetailContent() {
                 alignItems: "center", 
                 gap: 12, 
                 cursor: p.addr?.startsWith("SP") ? "pointer" : "default",
-                transition: "transform 0.2s" 
+                transition: "transform 0.2s",
+                position: "relative"
               }}
               onMouseEnter={e => {
-                if (p.addr?.startsWith("SP")) e.currentTarget.style.transform = "translateY(-2px)";
+                if (p.addr?.startsWith("SP")) {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  setActivePopover(p.key);
+                }
               }}
               onMouseLeave={e => {
-                if (p.addr?.startsWith("SP")) e.currentTarget.style.transform = "none";
+                if (p.addr?.startsWith("SP")) {
+                  e.currentTarget.style.transform = "none";
+                  setActivePopover(null);
+                }
               }}
             >
               <div style={{ fontSize: 24 }}>{p.icon}</div>
-              <div>
+              <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{ fontSize: 12, color: "#64748b" }}>{p.label}</div>
                   {p.addr?.startsWith("SP") && <span style={{ fontSize: 10, color: "#6366f1", opacity: 0.8 }}>🔍 Inspect</span>}
@@ -396,6 +405,10 @@ function PactDetailContent() {
                   {p.addr && p.addr.length > 15 ? `${p.addr.slice(0, 8)}...${p.addr.slice(-6)}` : p.addr || "Not Set"}
                 </div>
               </div>
+
+              {activePopover === p.key && p.addr && (
+                <ParticipantPopover address={p.addr} onClose={() => setActivePopover(null)} />
+              )}
             </div>
           ))}
         </div>
