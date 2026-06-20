@@ -14,6 +14,42 @@ interface Milestone {
   tags?: string[];
 }
 
+const Tooltip = ({ text }: { text: string }) => {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div style={{ position: "relative", display: "inline-flex", alignItems: "center", marginLeft: 6 }}>
+      <span
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+        style={{
+          width: 14, height: 14, borderRadius: "50%", background: "rgba(255,255,255,0.1)",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          fontSize: 9, fontWeight: 700, color: "#94a3b8", cursor: "help", transition: "background 0.2s"
+        }}
+      >
+        i
+      </span>
+      {visible && (
+        <div style={{
+          position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+          background: "rgba(15, 23, 42, 0.95)", border: "1px solid rgba(255, 255, 255, 0.08)",
+          padding: "8px 12px", borderRadius: 8, color: "#f1f5f9", fontSize: 11, fontWeight: 500,
+          width: 180, textAlign: "center", pointerEvents: "none", zIndex: 100, lineHeight: "1.4",
+          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3)",
+          backdropFilter: "blur(4px)"
+        }}>
+          {text}
+          <div style={{
+            position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
+            width: 0, height: 0, borderStyle: "solid",
+            borderWidth: "5px 5px 0 5px", borderColor: "rgba(15, 23, 42, 0.95) transparent transparent transparent"
+          }} />
+        </div>
+      )}
+    </div>
+  );
+};
+
 function CreatePactForm() {
   const { address, connected, connect } = useWallet();
   const router = useRouter();
@@ -276,24 +312,39 @@ function CreatePactForm() {
             <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 24 }}>Pact Details</h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               <div className="input-group">
-                <label htmlFor="pact-title" className="input-label">Pact Title</label>
+                <label htmlFor="pact-title" className="input-label" style={{ display: "flex", alignItems: "center" }}>
+                  Pact Title
+                  <Tooltip text="Give your agreement a clear name representing the project deliverables." />
+                </label>
                 <input id="pact-title" className="input-field" placeholder="e.g. DeFi Dashboard Development" value={title} onChange={e => setTitle(e.target.value)} aria-label="Pact Title" required />
               </div>
               <div className="input-group">
-                <label htmlFor="pact-desc" className="input-label">Description</label>
+                <label htmlFor="pact-desc" className="input-label" style={{ display: "flex", alignItems: "center" }}>
+                  Description
+                  <Tooltip text="Outline the detailed scope of work, technical requirements, and expectations." />
+                </label>
                 <textarea id="pact-desc" className="input-field" placeholder="Describe the work to be done..." value={description} onChange={e => setDescription(e.target.value)} aria-label="Pact Description" required />
               </div>
               <div className="input-group">
-                <label htmlFor="pact-provider" className="input-label">Provider Address (STX)</label>
+                <label htmlFor="pact-provider" className="input-label" style={{ display: "flex", alignItems: "center" }}>
+                  Provider Address (STX)
+                  <Tooltip text="The Stacks wallet address of the party who will perform the work and receive payments." />
+                </label>
                 <input id="pact-provider" className="input-field" placeholder="SP2J6ZY48GV1EZ5V2V5RB9MP66SW86PYKKNRV9EJ7" value={provider} onChange={e => setProvider(e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: 13 }} aria-label="Provider Address (STX)" required />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div className="input-group">
-                  <label htmlFor="pact-amount" className="input-label">Total Amount (STX)</label>
+                  <label htmlFor="pact-amount" className="input-label" style={{ display: "flex", alignItems: "center" }}>
+                    Total Amount (STX)
+                    <Tooltip text="The overall escrow budget that will be split among the milestones." />
+                  </label>
                   <input id="pact-amount" className="input-field" type="number" placeholder="5000" value={totalAmount} onChange={e => setTotalAmount(e.target.value)} aria-label="Total Amount (STX)" required />
                 </div>
                 <div className="input-group">
-                  <label htmlFor="pact-deadline" className="input-label">Deadline</label>
+                  <label htmlFor="pact-deadline" className="input-label" style={{ display: "flex", alignItems: "center" }}>
+                    Deadline
+                    <Tooltip text="The absolute time limit by which all milestones should be successfully delivered." />
+                  </label>
                   <input id="pact-deadline" className="input-field" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} aria-label="Deadline Date" required />
                 </div>
               </div>
