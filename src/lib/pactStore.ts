@@ -161,7 +161,8 @@ export const pactStore = {
       title: m.title || "Untitled",
       description: m.description || "",
       amount: (m.amount || "").includes("STX") ? m.amount : `${m.amount || 0} STX`,
-      state: 0 // Pending
+      state: 0, // Pending
+      tags: (m as any).tags || []
     }));
 
     const newPact: Pact = {
@@ -193,7 +194,8 @@ export const pactStore = {
       title: m.title || "",
       description: m.description || "",
       amount: (m.amount || "").includes("STX") ? m.amount : `${m.amount || 0} STX`,
-      state: 0 // Pending
+      state: 0, // Pending
+      tags: (m as any).tags || []
     }));
 
     if (pact) {

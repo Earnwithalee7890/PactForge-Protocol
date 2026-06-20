@@ -11,6 +11,7 @@ interface Milestone {
   title: string;
   description: string;
   amount: string;
+  tags?: string[];
 }
 
 function CreatePactForm() {
@@ -73,13 +74,30 @@ function CreatePactForm() {
 
   const addMilestone = () => {
     if (milestones.length < 10) {
-      setMilestones([...milestones, { title: "", description: "", amount: "" }]);
+      setMilestones([...milestones, { title: "", description: "", amount: "", tags: [] }]);
     }
   };
 
   const updateMilestone = (index: number, field: keyof Milestone, value: string) => {
     const updated = [...milestones];
     updated[index] = { ...updated[index], [field]: value };
+    setMilestones(updated);
+  };
+
+  const toggleMilestoneTag = (index: number, tag: string) => {
+    const updated = [...milestones];
+    const currentTags = updated[index].tags || [];
+    if (currentTags.includes(tag)) {
+      updated[index] = {
+        ...updated[index],
+        tags: currentTags.filter(t => t !== tag)
+      };
+    } else {
+      updated[index] = {
+        ...updated[index],
+        tags: [...currentTags, tag]
+      };
+    }
     setMilestones(updated);
   };
 
@@ -367,6 +385,36 @@ function CreatePactForm() {
                     <input className="input-field" placeholder="Milestone title" value={ms.title} onChange={e => updateMilestone(i, "title", e.target.value)} aria-label={`Milestone ${i + 1} Title`} />
                     <textarea className="input-field" placeholder="What will be delivered?" value={ms.description} onChange={e => updateMilestone(i, "description", e.target.value)} style={{ minHeight: 60 }} aria-label={`Milestone ${i + 1} Description`} />
                     <input className="input-field" type="number" placeholder="Payment amount (STX)" value={ms.amount} onChange={e => updateMilestone(i, "amount", e.target.value)} aria-label={`Milestone ${i + 1} Amount`} />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <label style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Milestone Tags</label>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {["design", "frontend", "backend", "smart-contract", "testing", "docs"].map(tag => {
+                          const isSelected = (ms.tags || []).includes(tag);
+                          return (
+                            <button
+                              key={tag}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                toggleMilestoneTag(i, tag);
+                              }}
+                              style={{
+                                padding: "4px 10px",
+                                borderRadius: 6,
+                                fontSize: 11,
+                                cursor: "pointer",
+                                border: "1px solid",
+                                background: isSelected ? "rgba(99, 102, 241, 0.2)" : "rgba(255,255,255,0.02)",
+                                color: isSelected ? "#818cf8" : "#94a3b8",
+                                borderColor: isSelected ? "rgba(99, 102, 241, 0.4)" : "rgba(255,255,255,0.08)",
+                                transition: "all 0.2s"
+                              }}
+                            >
+                              #{tag}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
