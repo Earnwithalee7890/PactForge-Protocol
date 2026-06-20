@@ -21,6 +21,23 @@ export default function DisputesPage() {
   const [isPending, setIsPending] = useState(false);
   const [evidenceList, setEvidenceList] = useState<Record<number, Array<{ sender: string; text: string; date: string }>>>({});
   const [evidenceInput, setEvidenceInput] = useState<Record<number, string>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "resolved">("all");
+
+  const filteredDisputes = disputes.filter(d => {
+    const pact = pactStore.getPactById(d.pactId);
+    const matchesQuery = 
+      d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.reason.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (pact?.title || "").toLowerCase().includes(searchQuery.toLowerCase());
+      
+    const matchesStatus = 
+      statusFilter === "all" ||
+      (statusFilter === "open" && d.status === "open") ||
+      (statusFilter === "resolved" && d.status !== "open");
+      
+    return matchesQuery && matchesStatus;
+  });
 
   useEffect(() => {
     setDisputes(pactStore.getDisputes());
@@ -149,9 +166,45 @@ export default function DisputesPage() {
           ))}
         </div>
 
+        {/* Search & Filter Toolbar */}
+        <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flex: 1 }}>
+            <input 
+              type="text" 
+              placeholder="Search disputes, descriptions, or pacts..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 8,
+                padding: "10px 16px",
+                color: "#f1f5f9",
+                fontSize: 13,
+                outline: "none",
+                minWidth: 260,
+                flex: 1
+              }}
+            />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {(["all", "open", "resolved"] as const).map(f => (
+              <button key={f} onClick={() => setStatusFilter(f)}
+                className={statusFilter === f ? "btn btn-primary" : "btn btn-secondary"}
+                style={{ padding: "8px 20px", fontSize: 13, textTransform: "capitalize" }}>
+                {f === "all" ? "All Disputes" : f}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Disputes List */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {disputes.map(d => {
+          {filteredDisputes.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#64748b", background: "rgba(255,255,255,0.02)", borderRadius: 16 }}>
+              No disputes found matching your criteria.
+            </div>
+          ) : filteredDisputes.map(d => {
             const st = stateStyle[d.status] || stateStyle.open;
             const pact = pactStore.getPactById(d.pactId);
             const totalVotes = d.votesClient + d.votesProvider;
