@@ -40,7 +40,7 @@ export default function DashboardPage() {
   const [simulatedActivity, setSimulatedActivity] = useLocalStorage<boolean>("pactforge_settings_simulation", false);
 
   const { toast } = useToast();
-  const { connected } = useWallet();
+  const { connected, address, pfgBalance, reputation } = useWallet();
 
   useEffect(() => {
     const saved = localStorage.getItem("pactforge_v2_currency");
@@ -313,6 +313,56 @@ export default function DashboardPage() {
             <button onClick={exportCSV} className="btn btn-secondary" style={{ padding: "8px 20px", fontSize: 13 }}>
               Export CSV
             </button>
+          </div>
+        </div>
+
+        {/* Profile Summary Header */}
+        <div className="glass-card" style={{ padding: "20px 24px", marginBottom: 32, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20, background: "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(99, 102, 241, 0.05) 100%)", border: "1px solid rgba(99, 102, 241, 0.15)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: "50%",
+              background: connected ? "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)" : "rgba(255,255,255,0.05)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 24, boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)"
+            }}>
+              {connected ? "🛡️" : "👤"}
+            </div>
+            <div>
+              {connected ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>
+                      {address ? `${address.slice(0, 6)}...${address.slice(-6)}` : "Connected User"}
+                    </span>
+                    <span style={{
+                      fontSize: 10, padding: "2px 8px", borderRadius: 12, fontWeight: 700,
+                      background: "rgba(34,197,94,0.15)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)"
+                    }}>
+                      ACTIVE WALLET
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>
+                    Reputation Score: <strong style={{ color: "#6366f1" }}>{reputation?.score ?? 95}</strong> (Tier: {reputation?.score && reputation.score >= 90 ? "Diamond" : "Elite"})
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#f1f5f9" }}>Anonymous Agent</div>
+                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>Connect Stacks wallet to synchronize profile reputation.</div>
+                </>
+              )}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Governance Tokens</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#f59e0b" }}>{connected ? `${pfgBalance.toLocaleString()} PFG` : "0.00 PFG"}</div>
+            </div>
+            <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.08)" }} />
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Pacts Executed</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#f1f5f9" }}>{connected ? (reputation?.pactsCompleted ?? 0) : 0} Completed</div>
+            </div>
           </div>
         </div>
 
