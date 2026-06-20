@@ -705,6 +705,32 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Category 5: Transaction History Logs */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "#f1f5f9" }}>📜 Transaction Logs</h3>
+                <p style={{ fontSize: 12, color: "#64748b", lineHeight: "1.5" }}>
+                  On-chain actions broadcasted from this wallet interface.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 200, overflowY: "auto" }}>
+                  {[
+                    { tx: "0x60c2...7e635", act: "record-milestone-delivered", time: "1d ago", status: "Failed", color: "#ef4444" },
+                    { tx: "0xa2d3...8fb21", act: "fund-pact", time: "3d ago", status: "Success", color: "#22c55e" },
+                    { tx: "0x5f3e...b412a", act: "init-reputation", time: "5d ago", status: "Success", color: "#22c55e" },
+                    { tx: "0x12b8...a7e3d", act: "add-milestone", time: "1w ago", status: "Success", color: "#22c55e" },
+                  ].map((log, idx) => (
+                    <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "var(--font-mono)", color: "#e2e8f0" }}>{log.tx}</div>
+                        <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{log.act} • {log.time}</div>
+                      </div>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: `${log.color}22`, color: log.color }}>
+                        {log.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Save Buttons Footer */}
