@@ -122,6 +122,12 @@ export default function DisputesPage() {
     }
   };
 
+  const totalDisputes = disputes.length;
+  const activeDisputesCount = disputes.filter(d => d.status === "open").length;
+  const resolvedDisputesCount = disputes.filter(d => d.status !== "open").length;
+  const resolutionRate = totalDisputes > 0 ? `${Math.round((resolvedDisputesCount / totalDisputes) * 100)}%` : "100%";
+  const totalVotesCast = disputes.reduce((sum, d) => sum + d.votesClient + d.votesProvider, 0);
+
   return (
     <div style={{ minHeight: "100vh", paddingTop: 96, paddingBottom: 60 }}>
       <div className="container">
@@ -153,10 +159,10 @@ export default function DisputesPage() {
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 32 }}>
           {[
-            { icon: "📊", label: "Total Disputes", value: disputes.length.toString() },
-            { icon: "⚖️", label: "Active Arbiters", value: "18" },
-            { icon: "✅", label: "Resolution Rate", value: "94%" },
-            { icon: "⏱️", label: "Avg Resolution", value: "3.2 days" },
+            { icon: "📊", label: "Total Disputes", value: totalDisputes.toString() },
+            { icon: "⚖️", label: "Active Disputes", value: activeDisputesCount.toString() },
+            { icon: "✅", label: "Resolution Rate", value: resolutionRate },
+            { icon: "🗳️", label: "DAO Votes Cast", value: totalVotesCast.toString() },
           ].map((s, i) => (
             <div key={i} className="glass-card" style={{ padding: 20, textAlign: "center" }}>
               <div style={{ fontSize: 24, marginBottom: 8 }}>{s.icon}</div>
