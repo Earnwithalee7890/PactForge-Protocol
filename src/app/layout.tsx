@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Providers } from "./providers";
 import MascotHelper from "@/components/MascotHelper";
+import ScrollToTop from "@/components/ScrollToTop";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider } from "@/components/Toaster";
 
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <main style={{ minHeight: "calc(100vh - 180px)" }}>{children}</main>
               <Footer />
               <MascotHelper />
+              <ScrollToTop />
             </Providers>
           </ToastProvider>
         </ThemeProvider>
