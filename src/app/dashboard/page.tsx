@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [customNodeUrl, setCustomNodeUrl] = useLocalStorage<string>("pactforge_settings_node", "https://api.mainnet.hiro.so");
   const [autoRefreshInterval, setAutoRefreshInterval] = useLocalStorage<number>("pactforge_settings_interval", 30);
   const [walletAlerts, setWalletAlerts] = useLocalStorage<boolean>("pactforge_settings_alerts", true);
+  const [simulatedActivity, setSimulatedActivity] = useLocalStorage<boolean>("pactforge_settings_simulation", false);
 
   const { toast } = useToast();
   const { connected } = useWallet();
@@ -55,7 +56,35 @@ export default function DashboardPage() {
       setLoading(false);
     }, 600);
     return () => clearTimeout(timer);
-  }, []);
+  }, []);  useEffect(() => {
+    if (!simulatedActivity) return;
+    const interval = setInterval(() => {
+      const currentPacts = pactStore.getPacts();
+      const progressable = currentPacts.find(p => p.state === "created" || (p.state === "active" && (p.milestones || []).some(m => m.state < 3)));
+      if (progressable) {
+        if (progressable.state === "created") {
+          progressable.state = "active";
+          progressable.fundedAmount = progressable.totalAmount;
+          if (progressable.milestones && progressable.milestones.length > 0) {
+            progressable.milestones[0].state = 1;
+          }
+          pactStore.updatePact(progressable);
+          setPacts(pactStore.getPacts());
+          toast(`[Simulation] Funded Pact #${progressable.id}: ${progressable.title}`, "info");
+        } else {
+          const nextM = (progressable.milestones || []).find(m => m.state < 3);
+          if (nextM) {
+            const nextState = (nextM.state === 1 ? 3 : 1) as any;
+            pactStore.updateMilestoneState(progressable.id, nextM.id, nextState);
+            setPacts(pactStore.getPacts());
+            toast(`[Simulation] Milestone '${nextM.title}' on Pact #${progressable.id} progressed!`, "info");
+          }
+        }
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [simulatedActivity, toast]);
+
 
   const filtered = useMemo(() => {
     if (tab === "settings") return [];
@@ -191,7 +220,8 @@ export default function DashboardPage() {
         selectedNetwork,
         customNodeUrl,
         autoRefreshInterval,
-        walletAlerts
+        walletAlerts,
+        simulatedActivity
       }
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -219,6 +249,7 @@ export default function DashboardPage() {
             if (parsed.settings.customNodeUrl !== undefined) setCustomNodeUrl(parsed.settings.customNodeUrl);
             if (parsed.settings.autoRefreshInterval !== undefined) setAutoRefreshInterval(parsed.settings.autoRefreshInterval);
             if (parsed.settings.walletAlerts !== undefined) setWalletAlerts(parsed.settings.walletAlerts);
+            if (parsed.settings.simulatedActivity !== undefined) setSimulatedActivity(parsed.settings.simulatedActivity);
           }
           toast("Database restored from backup successfully!", "success");
         } else {
@@ -482,6 +513,19 @@ export default function DashboardPage() {
                     type="checkbox" 
                     checked={walletAlerts}
                     onChange={(e) => setWalletAlerts(e.target.checked)}
+                    style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#6366f1" }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Simulate Contract Activity</div>
+                    <div style={{ fontSize: 11, color: "#64748b" }}>Periodically auto-progress mock pact milestones.</div>
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    checked={simulatedActivity}
+                    onChange={(e) => setSimulatedActivity(e.target.checked)}
                     style={{ width: 18, height: 18, cursor: "pointer", accentColor: "#6366f1" }}
                   />
                 </div>
