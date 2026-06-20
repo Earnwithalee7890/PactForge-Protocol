@@ -10,6 +10,7 @@ import { useToast } from "@/components/Toaster";
 import { request } from "@stacks/connect";
 import { uintCV } from "@stacks/transactions";
 import { useWallet } from "@/context/WalletContext";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const stateColors: Record<string, { bg: string; color: string }> = {
   draft: { bg: "rgba(100,116,139,0.12)", color: "#64748b" },
@@ -29,13 +30,13 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState<"STX" | "USD" | "EUR">("STX");
 
-  // Settings states
-  const [emailNotif, setEmailNotif] = useState(true);
-  const [autoSync, setAutoSync] = useState(true);
-  const [selectedNetwork, setSelectedNetwork] = useState<"mainnet" | "testnet" | "mock">("mainnet");
-  const [customNodeUrl, setCustomNodeUrl] = useState("https://api.mainnet.hiro.so");
-  const [autoRefreshInterval, setAutoRefreshInterval] = useState(30);
-  const [walletAlerts, setWalletAlerts] = useState(true);
+  // Settings states using custom useLocalStorage hook
+  const [emailNotif, setEmailNotif] = useLocalStorage<boolean>("pactforge_settings_email", true);
+  const [autoSync, setAutoSync] = useLocalStorage<boolean>("pactforge_settings_sync", true);
+  const [selectedNetwork, setSelectedNetwork] = useLocalStorage<"mainnet" | "testnet" | "mock">("pactforge_settings_network", "mainnet");
+  const [customNodeUrl, setCustomNodeUrl] = useLocalStorage<string>("pactforge_settings_node", "https://api.mainnet.hiro.so");
+  const [autoRefreshInterval, setAutoRefreshInterval] = useLocalStorage<number>("pactforge_settings_interval", 30);
+  const [walletAlerts, setWalletAlerts] = useLocalStorage<boolean>("pactforge_settings_alerts", true);
 
   const { toast } = useToast();
   const { connected } = useWallet();
@@ -45,26 +46,6 @@ export default function DashboardPage() {
     if (saved && (saved === "STX" || saved === "USD" || saved === "EUR")) {
       setCurrency(saved as any);
     }
-
-    const savedEmail = localStorage.getItem("pactforge_settings_email");
-    if (savedEmail !== null) setEmailNotif(savedEmail === "true");
-    
-    const savedSync = localStorage.getItem("pactforge_settings_sync");
-    if (savedSync !== null) setAutoSync(savedSync === "true");
-    
-    const savedNet = localStorage.getItem("pactforge_settings_network");
-    if (savedNet === "mainnet" || savedNet === "testnet" || savedNet === "mock") {
-      setSelectedNetwork(savedNet as any);
-    }
-    
-    const savedNode = localStorage.getItem("pactforge_settings_node");
-    if (savedNode) setCustomNodeUrl(savedNode);
-
-    const savedInterval = localStorage.getItem("pactforge_settings_interval");
-    if (savedInterval) setAutoRefreshInterval(parseInt(savedInterval) || 30);
-
-    const savedAlerts = localStorage.getItem("pactforge_settings_alerts");
-    if (savedAlerts !== null) setWalletAlerts(savedAlerts === "true");
   }, []);
 
   useEffect(() => {
@@ -197,12 +178,6 @@ export default function DashboardPage() {
   };
 
   const handleSaveSettings = () => {
-    localStorage.setItem("pactforge_settings_email", String(emailNotif));
-    localStorage.setItem("pactforge_settings_sync", String(autoSync));
-    localStorage.setItem("pactforge_settings_network", selectedNetwork);
-    localStorage.setItem("pactforge_settings_node", customNodeUrl);
-    localStorage.setItem("pactforge_settings_interval", String(autoRefreshInterval));
-    localStorage.setItem("pactforge_settings_alerts", String(walletAlerts));
     toast("Settings saved successfully!", "success");
   };
 
