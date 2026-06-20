@@ -41,6 +41,7 @@ function PactDetailContent() {
 
   const [milestoneSearch, setMilestoneSearch] = useState("");
   const [milestoneFilter, setMilestoneFilter] = useState<number | "all">("all");
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string>("all");
 
   const [explorerAddress, setExplorerAddress] = useState("");
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
@@ -436,12 +437,20 @@ function PactDetailContent() {
 
   const completedMs = (pact.milestones || []).filter(m => m.state >= 3).length;
   const progress = pact.milestones?.length > 0 ? (completedMs / pact.milestones.length) * 100 : 0;
+  const allMilestoneTags = Array.from(
+    new Set((pact.milestones || []).flatMap(ms => ms.tags || []))
+  );
 
   const filteredMilestones = (pact.milestones || []).filter(ms => {
     if (milestoneFilter !== "all" && ms.state !== milestoneFilter) return false;
+    if (selectedTagFilter !== "all" && !(ms.tags || []).includes(selectedTagFilter)) return false;
     if (milestoneSearch) {
       const q = milestoneSearch.toLowerCase();
-      if (!(ms.title || "").toLowerCase().includes(q) && !(ms.description || "").toLowerCase().includes(q)) return false;
+      if (
+        !(ms.title || "").toLowerCase().includes(q) && 
+        !(ms.description || "").toLowerCase().includes(q) &&
+        !(ms.tags || []).some(t => t.toLowerCase().includes(q))
+      ) return false;
     }
     return true;
   });
@@ -594,6 +603,30 @@ function PactDetailContent() {
               <option value="4" style={{ background: "#0f172a" }}>Rejected</option>
               <option value="5" style={{ background: "#0f172a" }}>Paid</option>
             </select>
+
+            {allMilestoneTags.length > 0 && (
+              <select
+                value={selectedTagFilter}
+                onChange={(e) => setSelectedTagFilter(e.target.value)}
+                style={{
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 8,
+                  padding: "6px 12px",
+                  color: "#f1f5f9",
+                  fontSize: 12,
+                  outline: "none",
+                  cursor: "pointer"
+                }}
+              >
+                <option value="all" style={{ background: "#0f172a" }}>All Tags</option>
+                {allMilestoneTags.map(tag => (
+                  <option key={tag} value={tag} style={{ background: "#0f172a" }}>
+                    #{tag}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
@@ -616,6 +649,18 @@ function PactDetailContent() {
                 <div style={{ flex: 1, minWidth: 150 }}>
                   <div style={{ fontWeight: 600, marginBottom: 2 }}>{ms.title || "Untitled"}</div>
                   <div style={{ fontSize: 13, color: "#64748b" }}>{ms.description || ""}</div>
+                  {ms.tags && ms.tags.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+                      {ms.tags.map(tag => (
+                        <span key={tag} style={{
+                          padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
+                          background: "rgba(99, 102, 241, 0.15)", color: "#818cf8"
+                        }}>
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 14, minWidth: 80, textAlign: "right" }}>{ms.amount || "0 STX"}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
