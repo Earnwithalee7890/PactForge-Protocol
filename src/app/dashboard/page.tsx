@@ -418,7 +418,7 @@ export default function DashboardPage() {
                       outline: "none",
                     }}
                   />
-                  <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                  <div style={{ display: "flex", gap: 10, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
                     <span 
                       onClick={() => setCustomNodeUrl("https://api.mainnet.hiro.so")}
                       style={{ fontSize: 11, color: "#6366f1", cursor: "pointer", textDecoration: "underline" }}
@@ -426,10 +426,31 @@ export default function DashboardPage() {
                       Hiro Mainnet
                     </span>
                     <span 
+                      onClick={() => {
+                        navigator.clipboard.writeText("https://api.mainnet.hiro.so");
+                        toast("Hiro Mainnet node URL copied to clipboard!", "success");
+                      }}
+                      style={{ fontSize: 10, color: "#94a3b8", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 2 }}
+                      title="Copy URL"
+                    >
+                      📋 Copy
+                    </span>
+                    <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 10 }}>|</span>
+                    <span 
                       onClick={() => setCustomNodeUrl("https://api.testnet.hiro.so")}
                       style={{ fontSize: 11, color: "#6366f1", cursor: "pointer", textDecoration: "underline" }}
                     >
                       Hiro Testnet
+                    </span>
+                    <span 
+                      onClick={() => {
+                        navigator.clipboard.writeText("https://api.testnet.hiro.so");
+                        toast("Hiro Testnet node URL copied to clipboard!", "success");
+                      }}
+                      style={{ fontSize: 10, color: "#94a3b8", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 2 }}
+                      title="Copy URL"
+                    >
+                      📋 Copy
                     </span>
                   </div>
                 </div>
