@@ -53,6 +53,13 @@ const getTierInfo = (score: number) => {
   return { current: TIERS[0], next: TIERS[1], progress: 0 };
 };
 
+const GRADIENTS = [
+  { id: "indigo-purple", name: "Nebula Pulse", css: "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08))", border: "rgba(99,102,241,0.25)" },
+  { id: "sunset-orange", name: "Solar Flare", css: "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(239,68,68,0.08))", border: "rgba(245,158,11,0.25)" },
+  { id: "emerald-mint", name: "Aurora Jade", css: "linear-gradient(135deg, rgba(16,185,129,0.12), rgba(6,182,212,0.08))", border: "rgba(16,185,129,0.25)" },
+  { id: "cyber-neon", name: "Cyber Sunset", css: "linear-gradient(135deg, rgba(236,72,153,0.12), rgba(99,102,241,0.08))", border: "rgba(236,72,153,0.25)" }
+];
+
 export default function ReputationPage() {
   const { 
     address, 
@@ -78,6 +85,8 @@ export default function ReputationPage() {
   const [activities, setActivities] = useState<Array<{ date: string; title: string; desc: string; type: string }>>([]);
 
   const { toast } = useToast();
+  const [showCustomizeModal, setShowCustomizeModal] = useState<boolean>(false);
+  const [selectedGradient, setSelectedGradient] = useState<number>(0);
 
   const handleRecordPactCompleted = async () => {
     if (!address) return;
@@ -207,7 +216,7 @@ export default function ReputationPage() {
           <>
             {/* Live Profile Card with 3D Cartoon Avatar */}
             <div className="glass-card" style={{ padding: 36, marginBottom: 32, display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap",
-              background: `linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04))`, border: "1px solid rgba(99,102,241,0.12)" }}>
+              background: GRADIENTS[selectedGradient].css, border: `1px solid ${GRADIENTS[selectedGradient].border}` }}>
               <div style={{
                 width: 96, height: 96, borderRadius: 24,
                 background: "linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
@@ -238,9 +247,18 @@ export default function ReputationPage() {
                   </div>
                 )}
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 13, color: "#64748b", marginBottom: 4 }}>Governance Balance</div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#6366f1" }}>{pfgBalance.toLocaleString()} PFG</div>
+              <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 13, color: "#64748b", marginBottom: 4 }}>Governance Balance</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "#6366f1" }}>{pfgBalance.toLocaleString()} PFG</div>
+                </div>
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowCustomizeModal(true)} 
+                  style={{ padding: "6px 14px", fontSize: 11, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  🎨 Theme Preview
+                </button>
               </div>
             </div>
 
@@ -415,6 +433,55 @@ export default function ReputationPage() {
           }
         }
       `}</style>
+
+      {/* Customize Modal */}
+      {showCustomizeModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999
+        }} className="animate-in">
+          <div className="glass-card" style={{ padding: 32, maxWidth: 420, width: "90%", display: "flex", flexDirection: "column", gap: 24 }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Select Badge Gradient</h3>
+              <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 4 }}>
+                Customize the look of your simulated soulbound profile card.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {GRADIENTS.map((g, idx) => (
+                <div
+                  key={g.id}
+                  onClick={() => setSelectedGradient(idx)}
+                  style={{
+                    padding: 16, borderRadius: 12, cursor: "pointer",
+                    background: g.css, border: `2px solid ${selectedGradient === idx ? "var(--text-primary)" : "rgba(255,255,255,0.06)"}`,
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{g.name}</span>
+                  {selectedGradient === idx && <span style={{ fontSize: 12 }}>✔️</span>}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowCustomizeModal(false);
+                  toast("Badge theme custom preview applied!", "success");
+                }}
+                style={{ padding: "10px 24px", fontSize: 12 }}
+              >
+                Apply & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
