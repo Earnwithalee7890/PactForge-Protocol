@@ -43,6 +43,9 @@ function PactDetailContent() {
   const [milestoneFilter, setMilestoneFilter] = useState<number | "all">("all");
   const [selectedTagFilter, setSelectedTagFilter] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [partnerRating, setPartnerRating] = useState<number>(5);
+  const [partnerFeedback, setPartnerFeedback] = useState("");
 
   const [explorerAddress, setExplorerAddress] = useState("");
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
@@ -338,6 +341,28 @@ function PactDetailContent() {
     const updated = pactStore.clearMilestoneObstacle(pact.id, milestoneId);
     if (updated) setPact({ ...updated });
     toast("Obstacle cleared in UI.", "success");
+  };
+
+  const handleSaveRating = () => {
+    if (!pact) return;
+    const savedRatings = localStorage.getItem("pactforge_v2_partner_ratings") || "[]";
+    try {
+      const list = JSON.parse(savedRatings);
+      list.push({
+        pactId: pact.id,
+        partner: address === pact.client ? pact.provider : pact.client,
+        rating: partnerRating,
+        feedback: partnerFeedback,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem("pactforge_v2_partner_ratings", JSON.stringify(list));
+      toast("Rating submitted successfully! SBT metrics refreshed.", "success");
+      setShowRatingModal(false);
+      setPartnerFeedback("");
+    } catch (e) {
+      console.error(e);
+      toast("Failed to submit rating.", "error");
+    }
   };
 
   const handlePrintInvoice = () => {
@@ -813,8 +838,13 @@ function PactDetailContent() {
             </>
           )}
           {pact.state === "completed" && (
-            <div className="badge badge-success" style={{ fontSize: 14, padding: "10px 20px" }}>
-              🏆 Project Completed Successfully
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <div className="badge badge-success" style={{ fontSize: 14, padding: "10px 20px" }}>
+                🏆 Project Completed Successfully
+              </div>
+              <button onClick={() => setShowRatingModal(true)} className="btn btn-primary" style={{ padding: "10px 20px" }}>
+                ⭐ Rate Partner
+              </button>
             </div>
           )}
           {pact.state === "disputed" && (
@@ -888,6 +918,55 @@ function PactDetailContent() {
             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
               <button onClick={() => setShowObstacleModal(false)} className="btn btn-secondary" style={{ padding: "10px 20px" }}>Cancel</button>
               <button onClick={handleReportObstacle} className="btn btn-danger" style={{ padding: "10px 20px" }}>Report Block</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Partner Rating Modal Dialog */}
+      {showRatingModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)",
+          display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1100,
+        }}>
+          <div className="glass-card" style={{ padding: 36, width: "100%", maxWidth: 450, display: "flex", flexDirection: "column", gap: 20 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 800 }}>⭐ Rate Your Partner</h2>
+            <p style={{ color: "#94a3b8", fontSize: 13 }}>Submit feedback. This updates their reputation score on their non-transferable SBT card.</p>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 12, color: "#94a3b8" }}>Rating Score</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    onClick={() => setPartnerRating(star)}
+                    style={{
+                      fontSize: 28, cursor: "pointer",
+                      color: star <= partnerRating ? "#f59e0b" : "#475569",
+                      transition: "color 0.2s"
+                    }}
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Written Feedback</label>
+              <textarea
+                className="input-field"
+                placeholder="E.g. Excellent communication and very fast delivery!"
+                value={partnerFeedback}
+                onChange={e => setPartnerFeedback(e.target.value)}
+                style={{ minHeight: 80 }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
+              <button onClick={() => setShowRatingModal(false)} className="btn btn-secondary" style={{ padding: "10px 20px" }}>Cancel</button>
+              <button onClick={handleSaveRating} className="btn btn-primary" style={{ padding: "10px 20px" }}>Submit Rating</button>
             </div>
           </div>
         </div>
