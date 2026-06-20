@@ -86,6 +86,29 @@ function runTests() {
   // Since cleared, it should re-initialize with default mock pacts (which has 4 items)
   assert(clearedPacts.length === 4, "Store should reset and reinitialize with 4 items after clearAll");
 
+  // 7. Milestone Tags Support in createPact & saveDraft
+  const pactWithTags = pactStore.createPact(
+    "Tagged Pact",
+    "Pact with tags",
+    "SP_CLIENT",
+    "SP_PROVIDER",
+    "100 STX",
+    [
+      { title: "M1", description: "Desc M1", amount: "50 STX", tags: ["frontend", "design"] as any },
+      { title: "M2", description: "Desc M2", amount: "50 STX", tags: ["backend"] as any }
+    ]
+  );
+  assert(pactWithTags.milestones[0].tags?.includes("frontend") === true, "Milestone 1 should save 'frontend' tag");
+  assert(pactWithTags.milestones[0].tags?.includes("design") === true, "Milestone 1 should save 'design' tag");
+  assert(pactWithTags.milestones[1].tags?.includes("backend") === true, "Milestone 2 should save 'backend' tag");
+
+  // 8. Search and Filter Simulation
+  const milestonesList = pactWithTags.milestones;
+  const filtered1 = milestonesList.filter(m => (m.tags || []).includes("frontend"));
+  assert(filtered1.length === 1 && filtered1[0].title === "M1", "Filtering milestones by 'frontend' should yield Milestone 1");
+  const filtered2 = milestonesList.filter(m => (m.tags || []).includes("backend"));
+  assert(filtered2.length === 1 && filtered2[0].title === "M2", "Filtering milestones by 'backend' should yield Milestone 2");
+
   console.log("All unit tests passed successfully!");
 }
 
