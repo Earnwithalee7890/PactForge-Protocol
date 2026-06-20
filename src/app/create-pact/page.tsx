@@ -37,6 +37,7 @@ function CreatePactForm() {
   
   const [publishedCount, setPublishedCount] = useState(0);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [gasTier, setGasTier] = useState<"low" | "medium" | "high">("medium");
 
   useEffect(() => {
     if (draftId) {
@@ -451,6 +452,40 @@ function CreatePactForm() {
               <div style={{ padding: 16, borderRadius: 10, background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.15)" }}>
                 <div style={{ fontSize: 13, color: "#22c55e", marginBottom: 4 }}>Protocol Fee (1%)</div>
                 <div style={{ fontWeight: 600, color: "#22c55e" }}>{totalAmount ? (parseFloat(totalAmount) * 0.01).toFixed(2) : "0"} STX</div>
+              </div>
+              <div style={{ padding: 16, borderRadius: 10, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 13, color: "#64748b" }}>Estimated Stacks Gas Fee</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Based on current network congestion</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 700, color: "#3b82f6" }}>
+                      {gasTier === "low" ? "0.005" : gasTier === "medium" ? "0.012" : "0.025"} STX
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>
+                      ~{gasTier === "low" ? "20m" : gasTier === "medium" ? "10m" : "5m"} confirm time
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {(["low", "medium", "high"] as const).map(tier => (
+                    <button
+                      key={tier}
+                      onClick={(e) => { e.preventDefault(); setGasTier(tier); }}
+                      style={{
+                        flex: 1, padding: "6px 0", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                        border: "1px solid",
+                        background: gasTier === tier ? "rgba(59,130,246,0.15)" : "transparent",
+                        borderColor: gasTier === tier ? "#3b82f6" : "rgba(255,255,255,0.08)",
+                        color: gasTier === tier ? "#60a5fa" : "#94a3b8",
+                        textTransform: "capitalize", transition: "all 0.2s"
+                      }}
+                    >
+                      {tier}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
