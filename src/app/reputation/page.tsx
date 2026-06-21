@@ -87,6 +87,26 @@ export default function ReputationPage() {
   const { toast } = useToast();
   const [showCustomizeModal, setShowCustomizeModal] = useState<boolean>(false);
   const [selectedGradient, setSelectedGradient] = useState<number>(0);
+  const [showVouchModal, setShowVouchModal] = useState<boolean>(false);
+  const [vouchAddress, setVouchAddress] = useState<string>("");
+  const [vouchReason, setVouchReason] = useState<string>("");
+  const [attestations, setAttestations] = useState<Array<{ from: string; reason: string; date: string }>>([
+    { from: "SP2F...GNFBT", reason: "Verified Core Protocol Contributor", date: "2026-06-18T10:00:00Z" }
+  ]);
+
+  const handleVouchSubmit = () => {
+    if (!vouchAddress.trim() || !vouchReason.trim()) return;
+    const newAtt = {
+      from: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "SP_ANON",
+      reason: vouchReason.trim(),
+      date: new Date().toISOString()
+    };
+    setAttestations([newAtt, ...attestations]);
+    toast("Attestation submitted! Peer score updated.", "success");
+    setShowVouchModal(false);
+    setVouchAddress("");
+    setVouchReason("");
+  };
 
   const handleRecordPactCompleted = async () => {
     if (!address) return;
@@ -346,6 +366,37 @@ export default function ReputationPage() {
               </div>
             </div>
 
+            {/* Peer Attestations & Vouches */}
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>🤝 Peer Attestations & Vouches</h2>
+                <button 
+                  onClick={() => setShowVouchModal(true)} 
+                  className="btn btn-secondary" 
+                  style={{ padding: "6px 14px", fontSize: 11 }}
+                >
+                  + Vouch for Peer
+                </button>
+              </div>
+              <div className="glass-card" style={{ padding: 24 }}>
+                {attestations.length === 0 ? (
+                  <div style={{ color: "#64748b", textAlign: "center", padding: 20 }}>No peer vouches received yet.</div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+                    {attestations.map((att, idx) => (
+                      <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 16 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748b", marginBottom: 8 }}>
+                          <span style={{ fontFamily: "var(--font-mono)", color: "#818cf8" }}>From: {att.from}</span>
+                          <span>{new Date(att.date).toLocaleDateString()}</span>
+                        </div>
+                        <div style={{ fontSize: 13, color: "#f1f5f9", fontWeight: 500 }}>"{att.reason}"</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Activities Timeline */}
             <div style={{ marginBottom: 40 }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>📅 Activities Timeline</h2>
@@ -433,6 +484,36 @@ export default function ReputationPage() {
           }
         }
       `}</style>
+
+      {/* Vouch Modal */}
+      {showVouchModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999
+        }}>
+          <div className="glass-card" style={{ padding: 32, maxWidth: 450, width: "90%", display: "flex", flexDirection: "column", gap: 20 }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>🤝 Vouch for a Peer Builder</h3>
+              <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 4 }}>
+                Attest to their coding skills or milestone completion. This boosts their on-chain SBT Builder reputation.
+              </p>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Peer Stacks Address</label>
+              <input className="input-field" placeholder="SP2F..." value={vouchAddress} onChange={e => setVouchAddress(e.target.value)} style={{ fontFamily: "var(--font-mono)", fontSize: 12 }} />
+            </div>
+            <div className="input-group">
+              <label className="input-label">Attestation Reason</label>
+              <textarea className="input-field" placeholder="E.g. Great smart contract developer, delivered on time..." value={vouchReason} onChange={e => setVouchReason(e.target.value)} style={{ minHeight: 80 }} />
+            </div>
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
+              <button onClick={() => setShowVouchModal(false)} className="btn btn-secondary" style={{ padding: "10px 20px" }}>Cancel</button>
+              <button onClick={handleVouchSubmit} className="btn btn-primary" style={{ padding: "10px 20px" }}>Submit Vouch</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Customize Modal */}
       {showCustomizeModal && (
